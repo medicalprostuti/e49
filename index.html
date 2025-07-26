@@ -1,0 +1,2357 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "Bangladesh is overpopulated country. What is the meaning of the underlined word?",
+          options: {
+            a: "So much people",
+            b: "Many people",
+            c: "Too much people",
+            d: "Too many people",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে underlined word হল 'overpopulated'। 'Overpopulated' মানে হচ্ছে কোনো স্থানে প্রয়োজনের চেয়ে বেশি মানুষ বসবাস করা। 'People' হল একটি countable noun। Countable noun-এর ক্ষেত্রে পরিমাণ বোঝাতে 'many' ব্যবহৃত হয়। 'Much' সাধারণত uncountable noun-এর ক্ষেত্রে ব্যবহৃত হয়। 'Too many' বলতে বোঝায় অতিরিক্ত বা প্রয়োজনের চেয়ে বেশি সংখ্যা। যেহেতু 'people' একটি countable noun এবং 'overpopulated' শব্দটি অতিরিক্ত জনসংখ্যাকি নির্দেশ করে, তাই 'Too many people' হলো সবচেয়ে উপযুক্ত অর্থ।</p>",
+        },
+        {
+          id: 2,
+          question: "A person who writes about his own life writes-",
+          options: {
+            a: "a diary",
+            b: "a biography",
+            c: "a chronicle",
+            d: "an autobiography",
+          },
+          correct: "d",
+          explanation:
+            "<p>নিজস্ব জীবন সম্পর্কে লেখালেখি করার জন্য ব্যবহৃত সঠিক শব্দটি হলো 'autobiography'।</p><br> <ul><li>(A) <b>A diary:</b> এটি হল একটি ব্যক্তিগত দিনলিপি যেখানে প্রতিদিনের ঘটনা ও অনুভূতি লেখা হয়।</li><li>(B) <b>A biography:</b> এটি হল অন্য কারো জীবন সম্পর্কে লেখা বিবরণ।</li><li>(C) <b>A chronicle:</b> এটি হল ঐতিহাসিক ঘটনাপঞ্জি বা ধারাবিবরণী।</li><li>(D) <b>An autobiography:</b> এটি হল যখন একজন ব্যক্তি নিজের জীবন সম্পর্কে নিজেই লেখেন। 'Auto-' মানে 'self' এবং 'biography' মানে 'জীবনবৃত্তান্ত'। তাই 'autobiography' মানে 'আত্মজীবনী'।</li></ul>",
+        },
+        {
+          id: 3,
+          question:
+            "A person who is indifferent to both pleasure and pain is called?",
+          options: {
+            a: "saint",
+            b: "hermit",
+            c: "ascetic",
+            d: "stoic",
+          },
+          correct: "d",
+          explanation:
+            "<p>যিনি সুখ-দুঃখ উভয় ক্ষেত্রেই উদাসীন বা নির্বিকার, তাকে 'stoic' বলা হয়।</p><br> <ul><li>(A) <b>Saint:</b> ধর্মীয় দৃষ্টিকোণ থেকে একজন পবিত্র ব্যক্তি।</li><li>(B) <b>Hermit:</b> একজন ব্যক্তি যিনি সমাজের বাইরে একাকী জীবনযাপন করেন, প্রায়শই ধর্মীয় কারণে।</li><li>(C) <b>Ascetic:</b> একজন ব্যক্তি যিনি আত্ম-নিয়ন্ত্রণ ও কঠোর জীবনযাপন করেন, প্রায়শই ধর্মীয় বা আধ্যাত্মিক উন্নতির জন্য।</li><li>(D) <b>Stoic:</b> একজন ব্যক্তি যিনি আবেগ বা অনুভূতি দ্বারা সহজে প্রভাবিত হন না, বিশেষ করে আনন্দ বা কষ্ট দ্বারা।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "To talk disrespectfully of sacred things is called-",
+          options: {
+            a: "apostasy",
+            b: "atheism",
+            c: "heresy",
+            d: "blasphemy",
+          },
+          correct: "d",
+          explanation:
+            "<p>পবিত্র বিষয়াদি সম্পর্কে অসম্মানজনক কথা বলাকে 'blasphemy' বলা হয়।</p><br> <ul><li>(A) <b>Apostasy:</b> নিজের ধর্ম বা বিশ্বাস ত্যাগ করা।</li><li>(B) <b>Atheism:</b> ঈশ্বরের অস্তিত্বে বিশ্বাস না থাকা।</li><li>(C) <b>Heresy:</b> প্রচলিত ধর্মীয় মতবাদের বিরোধী বিশ্বাস বা মতবাদ।</li><li>(D) <b>Blasphemy:</b> ঈশ্বর, পবিত্র জিনিস বা ধর্মীয় বিষয় সম্পর্কে অসম্মানজনক বা অবমাননাকর কথা বলা।</li></ul>",
+        },
+        {
+          id: 5,
+          question: "A learner of language is known as-",
+          options: {
+            a: "philologist",
+            b: "bibliophilist",
+            c: "misologist",
+            d: "misogynist",
+          },
+          correct: "a",
+          explanation:
+            "<p>ভাষার একজন শিক্ষার্থী বা ভাষাতত্ত্ববিদকে 'philologist' বলা হয়।</p><br> <ul><li>(A) <b>Philologist:</b> ভাষাতত্ত্ববিদ; যিনি ভাষা বা ভাষাতত্ত্ব নিয়ে অধ্যয়ন করেন।</li><li>(B) <b>Bibliophilist:</b> গ্রন্থপ্রেমিক; যিনি বই ভালোবাসেন বা সংগ্রহ করেন।</li><li>(C) <b>Misologist:</b> যুক্তি বা জ্ঞানকে ঘৃণা করে এমন ব্যক্তি।</li><li>(D) <b>Misogynist:</b> একজন ব্যক্তি যিনি নারীদের ঘৃণা করেন।</li></ul>",
+        },
+        {
+          id: 6,
+          question:
+            'Make one word of the following sentence: "Incapable of being explained"',
+          options: {
+            a: "inexpressible",
+            b: "incredible",
+            c: "inexplicit",
+            d: "inexplicable",
+          },
+          correct: "d",
+          explanation:
+            "<p>যে বিষয়টি ব্যাখ্যা করা অসম্ভব, তার জন্য সঠিক এক-শব্দটি হলো 'inexplicable'।</p><br> <ul><li>(A) <b>Inexpressible:</b> যা ভাষায় প্রকাশ করা যায় না।</li><li>(B) <b>Incredible:</b> অবিশ্বাস্য, যা বিশ্বাস করা কঠিন।</li><li>(C) <b>Inexplicit:</b> অস্পষ্ট, যা স্পষ্ট করে বলা হয়নি।</li><li>(D) <b>Inexplicable:</b> যা ব্যাখ্যা করা যায় না বা যার কারণ বোঝা যায় না।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "If someone is pessimistic, s/he is not-",
+          options: {
+            a: "fantastic",
+            b: "optimistic",
+            c: "sarcastic",
+            d: "tragic",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Pessimistic' শব্দের অর্থ হলো হতাশাবাদী। এর বিপরীত শব্দ হল 'optimistic' বা আশাবাদী।</p><br> <ul><li>(A) <b>Fantastic:</b> চমৎকার বা অসাধারণ।</li><li>(B) <b>Optimistic:</b> আশাবাদী; যিনি সবকিছুর ভালো দিক দেখেন এবং বিশ্বাস করেন যে ভালো কিছু ঘটবে।</li><li>(C) <b>Sarcastic:</b> ব্যঙ্গাত্মক বা বিদ্রূপাত্মক।</li><li>(D) <b>Tragic:</b> দুঃখজনক বা শোকাবহ।</li></ul>",
+        },
+        {
+          id: 8,
+          question: "The word 'Diaspora' is related to-",
+          options: {
+            a: "appearance",
+            b: "concentration",
+            c: "entrance",
+            d: "migration",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Diaspora' শব্দটি সাধারণত একটি নির্দিষ্ট জাতি বা সম্প্রদায়ের লোকদের তাদের ঐতিহ্যবাহী মাতৃভূমি থেকে ব্যাপক স্থানচ্যুতি বা ছড়িয়ে পড়াকে বোঝায়। তাই এটি 'migration' বা অভিবাসন এর সাথে সম্পর্কিত।</p><br> <ul><li>(A) <b>Appearance:</b> আবির্ভাব বা উপস্থিতি।</li><li>(B) <b>Concentration:</b> ঘনত্ব বা একত্রীকরণ।</li><li>(C) <b>Entrance:</b> প্রবেশ।</li><li>(D) <b>Migration:</b> অভিবাসন; এক স্থান থেকে অন্য স্থানে স্থানান্তরিত হওয়া, বিশেষ করে বড় জনগোষ্ঠীর ক্ষেত্রে।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "An Ophthalmologist is a doctor of the-",
+          options: {
+            a: "bones",
+            b: "nerves",
+            c: "eyes",
+            d: "nose and throat",
+          },
+          correct: "c",
+          explanation:
+            "<p>An 'Ophthalmologist' হলেন একজন চিকিৎসক যিনি চোখ ও দৃষ্টি সংক্রান্ত রোগ এবং অবস্থা নিয়ে কাজ করেন।</p><br> <ul><li>(A) <b>Bones:</b> হাড়ের ডাক্তার (Orthopedist)।</li><li>(B) <b>Nerves:</b> স্নায়ুর ডাক্তার (Neurologist)।</li><li>(C) <b>Eyes:</b> চোখের ডাক্তার (Ophthalmologist)।</li><li>(D) <b>Nose and throat:</b> নাক ও গলার ডাক্তার (Otolaryngologist বা ENT specialist)।</li></ul>",
+        },
+        {
+          id: 10,
+          question: "A 'cardiologist' is a doctor who treats-",
+          options: {
+            a: "cancer",
+            b: "heart patients",
+            c: "leprosy",
+            d: "dengue fever",
+          },
+          correct: "b",
+          explanation:
+            "<p>একজন 'cardiologist' হলেন হৃদরোগ বিশেষজ্ঞ।</p><br> <ul><li>(A) <b>Cancer:</b> ক্যান্সার (Oncologist)।</li><li>(B) <b>Heart patients:</b> হৃদরোগী (Cardiologist)।</li><li>(C) <b>Leprosy:</b> কুষ্ঠরোগ।</li><li>(D) <b>Dengue fever:</b> ডেঙ্গু জ্বর।</li></ul>",
+        },
+        {
+          id: 11,
+          question: "One who draws maps is called a-",
+          options: {
+            a: "compositor",
+            b: "cartographer",
+            c: "apothecary",
+            d: "curator",
+          },
+          correct: "b",
+          explanation:
+            "<p>যিনি মানচিত্র আঁকেন বা তৈরি করেন তাকে 'cartographer' বলা হয়।</p><br> <ul><li>(A) <b>Compositor:</b> যিনি ছাপার কাজে অক্ষর সাজান।</li><li>(B) <b>Cartographer:</b> মানচিত্রকার।</li><li>(C) <b>Apothecary:</b> প্রাচীনকালে ঔষধ বিক্রেতা বা ঔষধ প্রস্তুতকারক।</li><li>(D) <b>Curator:</b> জাদুঘর বা গ্যালারির তত্ত্বাবধায়ক।</li></ul>",
+        },
+        {
+          id: 12,
+          question: "The word 'Vegetarian' refers to-",
+          options: {
+            a: "Plants",
+            b: "Animals",
+            c: "Mammals",
+            d: "Possession",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Vegetarian' শব্দটি সেই ব্যক্তিকে বোঝায় যিনি উদ্ভিদজাত খাবার গ্রহণ করেন এবং মাংস, মাছ বা ডিম পরিহার করেন। তাই এটি 'Plants' বা উদ্ভিদের সাথে সম্পর্কিত।</p><br> <ul><li>(A) <b>Plants:</b> উদ্ভিদ।</li><li>(B) <b>Animals:</b> প্রাণী।</li><li>(C) <b>Mammals:</b> স্তন্যপায়ী প্রাণী।</li><li>(D) <b>Possession:</b> অধিকার বা সম্পত্তি।</li></ul>",
+        },
+        {
+          id: 13,
+          question: "A radiologist is most often employed in-",
+          options: {
+            a: "power plants",
+            b: "workshops",
+            c: "finances",
+            d: "hospitals",
+          },
+          correct: "d",
+          explanation:
+            "<p>একজন 'radiologist' হলেন একজন চিকিৎসক যিনি এক্স-রে, সিটি স্ক্যান, এমআরআই ইত্যাদির মতো মেডিকেল ইমেজিং প্রযুক্তি ব্যবহার করে রোগ নির্ণয় ও চিকিৎসা করেন। এই ধরনের কাজ সাধারণত হাসপাতালে হয়ে থাকে।</p><br> <ul><li>(A) <b>Power plants:</b> বিদ্যুৎ কেন্দ্র।</li><li>(B) <b>Workshops:</b> কর্মশালা।</li><li>(C) <b>Finances:</b> অর্থসংস্থান।</li><li>(D) <b>Hospitals:</b> হাসপাতাল।</li></ul>",
+        },
+        {
+          id: 14,
+          question:
+            "It is time to review protocol on testing nuclear weapons. Best substitute of the underlined word is-",
+          options: {
+            a: "Record of rules",
+            b: "Summary of rules",
+            c: "Procedures",
+            d: "Contract",
+          },
+          correct: "c",
+          explanation:
+            "<p>Underlined word 'protocol' শব্দের অর্থ হলো নিয়মাবলী বা কার্যপ্রণালী। এর সবচেয়ে উপযুক্ত প্রতিশব্দ হলো 'Procedures' বা কার্যপদ্ধতি।</p><br> <ul><li>(A) <b>Record of rules:</b> নিয়মের রেকর্ড।</li><li>(B) <b>Summary of rules:</b> নিয়মের সারাংশ।</li><li>(C) <b>Procedures:</b> কার্যপদ্ধতি বা নির্দিষ্ট কাজ করার পদ্ধতি। 'Protocol' বলতে আনুষ্ঠানিক পদ্ধতি বা নিয়মাবলী বোঝায়, যা 'procedures' এর সাথে সামঞ্জস্যপূর্ণ।</li><li>(D) <b>Contract:</b> চুক্তি।</li></ul>",
+        },
+        {
+          id: 15,
+          question:
+            "Societies living at the periphery are always overlooked during budgetary allocations.",
+          options: {
+            a: "backward regions",
+            b: "marginal areas",
+            c: "offshore areas",
+            d: "remote places",
+          },
+          correct: "b",
+          explanation:
+            "<p>এই বাক্যে underlined word 'periphery' শব্দের অর্থ হলো প্রান্ত বা প্রান্তিক এলাকা। এর সবচেয়ে উপযুক্ত প্রতিশব্দ হলো 'marginal areas'।</p><br> <ul><li>(A) <b>Backward regions:</b> অনুন্নত অঞ্চল।</li><li>(B) <b>Marginal areas:</b> প্রান্তিক বা সীমান্তবর্তী এলাকা। 'Periphery' শব্দটি কোনো কিছুর বাইরের বা প্রান্তিক অংশকে বোঝায়, যা 'marginal areas' এর সাথে সামঞ্জস্যপূর্ণ।</li><li>(C) <b>Offshore areas:</b> উপকূলবর্তী এলাকা।</li><li>(D) <b>Remote places:</b> দূরবর্তী স্থান।</li></ul>",
+        },
+        {
+          id: 16,
+          question: "A cobbler is a person who-",
+          options: {
+            a: "sells shoes",
+            b: "mends cobblestones",
+            c: "mends shoes",
+            d: "exports cobblestones",
+          },
+          correct: "c",
+          explanation:
+            "<p>একজন 'cobbler' হলেন একজন ব্যক্তি যিনি জুতা মেরামত করেন।</p><br> <ul><li>(A) <b>Sells shoes:</b> জুতা বিক্রি করেন (Shoe seller)।</li><li>(B) <b>Mends cobblestones:</b> নুড়ি পাথর মেরামত করেন।</li><li>(C) <b>Mends shoes:</b> জুতা মেরামত করেন।</li><li>(D) <b>Exports cobblestones:</b> নুড়ি পাথর রপ্তানি করেন।</li></ul>",
+        },
+        {
+          id: 17,
+          question: "The word 'Anthropology' is related to-",
+          options: {
+            a: "The study of diseases",
+            b: "The study of evolution",
+            c: "The study of minerals",
+            d: "The study of mankind",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Anthropology' হলো মানবজাতির অধ্যয়ন, এর উৎপত্তি, বিকাশ, সংস্কৃতি এবং সমাজ সম্পর্কে বিজ্ঞানসম্মত গবেষণা।</p><br> <ul><li>(A) <b>The study of diseases:</b> রোগ সম্পর্কিত অধ্যয়ন (Pathology/Epidemiology)।</li><li>(B) <b>The study of evolution:</b> বিবর্তন সম্পর্কিত অধ্যয়ন (Evolutionary biology)।</li><li>(C) <b>The study of minerals:</b> খনিজ সম্পর্কিত অধ্যয়ন (Mineralogy)।</li><li>(D) <b>The study of mankind:</b> মানবজাতি সম্পর্কিত অধ্যয়ন (Anthropology)।</li></ul>",
+        },
+        {
+          id: 18,
+          question:
+            "'Megalomania' is a kind of condition in which a person has an exaggerated view of her or his own-",
+          options: {
+            a: "family",
+            b: "power",
+            c: "mental illness",
+            d: "blue blood",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Megalomania' হল একটি মানসিক অবস্থা যেখানে একজন ব্যক্তির নিজের ক্ষমতা, সম্পদ বা গুরুত্ব সম্পর্কে অতিরঞ্জিত বা অবাস্তব উচ্চ ধারণা থাকে।</p><br> <ul><li>(A) <b>Family:</b> পরিবার।</li><li>(B) <b>Power:</b> ক্ষমতা বা শক্তি।</li><li>(C) <b>Mental illness:</b> মানসিক অসুস্থতা।</li><li>(D) <b>Blue blood:</b> অভিজাত বংশ।</li></ul>",
+        },
+        {
+          id: 19,
+          question: "'Epitome' means-",
+          options: {
+            a: "Very strange",
+            b: "A perfect example of something",
+            c: "Beauty",
+            d: "Architecture",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Epitome' শব্দের অর্থ হলো কোনো কিছুর নিখুঁত বা আদর্শ উদাহরণ, যা সেই জিনিসটির সমস্ত বৈশিষ্ট্যকে ছোট আকারে তুলে ধরে।</p><br> <ul><li>(A) <b>Very strange:</b> খুব অদ্ভুত।</li><li>(B) <b>A perfect example of something:</b> কোনো কিছুর নিখুঁত উদাহরণ।</li><li>(C) <b>Beauty:</b> সৌন্দর্য।</li><li>(D) <b>Architecture:</b> স্থাপত্য।</li></ul>",
+        },
+        {
+          id: 20,
+          question: '"Blue Chips" are-',
+          options: {
+            a: "Securities issued by the government",
+            b: "Industrial shares considered to be a safe investment",
+            c: "Industrial shares considered to be a risky investment",
+            d: "Flat plastic counters used as money tokens",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Blue Chips' বলতে সাধারণত বড়, সুপ্রতিষ্ঠিত এবং আর্থিকভাবে স্থিতিশীল কোম্পানিগুলোর শেয়ারকে বোঝায়, যেগুলোকে নিরাপদ বিনিয়োগ হিসেবে ধরা হয় এবং যারা সাধারণত নিয়মিত লভ্যাংশ প্রদান করে।</p><br> <ul><li>(A) <b>Securities issued by the government:</b> সরকার কর্তৃক জারিকৃত সিকিউরিটিজ।</li><li>(B) <b>Industrial shares considered to be a safe investment:</b> শিল্প শেয়ার যা নিরাপদ বিনিয়োগ হিসেবে বিবেচিত হয়।</li><li>(C) <b>Industrial shares considered to be a risky investment:</b> শিল্প শেয়ার যা ঝুঁকিপূর্ণ বিনিয়োগ হিসেবে বিবেচিত হয়।</li><li>(D) <b>Flat plastic counters used as money tokens:</b> অর্থ টোকেন হিসাবে ব্যবহৃত ফ্ল্যাট প্লাস্টিকের কাউন্টার।</li></ul>",
+        },
+        {
+          id: 21,
+          question: 'The word "Monologue" refers to-',
+          options: {
+            a: "Studying language",
+            b: "Long speech in a play",
+            c: "Business negotiation",
+            d: "Bilateral talk",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Monologue' হল একটি দীর্ঘ বক্তৃতা যা একজন ব্যক্তি একা প্রদান করে, প্রায়শই নাটকে বা সিনেমায়। 'Mono-' মানে 'এক' এবং 'logue' মানে 'বক্তৃতা'।</p><br> <ul><li>(A) <b>Studying language:</b> ভাষা অধ্যয়ন।</li><li>(B) <b>Long speech in a play:</b> একটি নাটকে দীর্ঘ বক্তৃতা।</li><li>(C) <b>Business negotiation:</b> ব্যবসায়িক আলোচনা।</li><li>(D) <b>Bilateral talk:</b> দ্বিপাক্ষিক আলোচনা।</li></ul>",
+        },
+        {
+          id: 22,
+          question:
+            "Government by a small group of all-powerful persons is termed as-",
+          options: {
+            a: "democracy",
+            b: "anarchy",
+            c: "monarchy",
+            d: "oligarchy",
+          },
+          correct: "d",
+          explanation:
+            "<p>যখন একটি ছোট, সর্বশক্তিমান গোষ্ঠী দ্বারা সরকার পরিচালিত হয়, তখন তাকে 'oligarchy' বা অভিজাততন্ত্র বলা হয়।</p><br> <ul><li>(A) <b>Democracy:</b> গণতন্ত্র; যেখানে জনগণ তাদের প্রতিনিধিদের মাধ্যমে শাসন করে।</li><li>(B) <b>Anarchy:</b> নৈরাজ্য; যেখানে কোনো সরকার বা কর্তৃপক্ষ থাকে না।</li><li>(C) <b>Monarchy:</b> রাজতন্ত্র; যেখানে একজন রাজা বা রানী শাসন করেন।</li><li>(D) <b>Oligarchy:</b> অভিজাততন্ত্র; যেখানে একটি ছোট প্রভাবশালী গোষ্ঠী ক্ষমতা ধরে রাখে।</li></ul>",
+        },
+        {
+          id: 23,
+          question: "A Philologist is the person who deals with-",
+          options: {
+            a: "Parasites",
+            b: "Ancient philosophy",
+            c: "Language",
+            d: "Music",
+          },
+          correct: "c",
+          explanation:
+            "<p>একজন 'Philologist' হলেন সেই ব্যক্তি যিনি ভাষা এবং এর ইতিহাস, গঠন ও বিবর্তন নিয়ে কাজ করেন বা অধ্যয়ন করেন।</p><br> <ul><li>(A) <b>Parasites:</b> পরজীবী (Parasitologist)।</li><li>(B) <b>Ancient philosophy:</b> প্রাচীন দর্শন (Philosopher)।</li><li>(C) <b>Language:</b> ভাষা (Philologist)।</li><li>(D) <b>Music:</b> সঙ্গীত (Musicologist)।</li></ul>",
+        },
+        {
+          id: 24,
+          question: "Understood but not specifically stated-",
+          options: {
+            a: "Explicit",
+            b: "Implicit",
+            c: "Elicit",
+            d: "Illicit",
+          },
+          correct: "b",
+          explanation:
+            "<p>যে বিষয়টি সুনির্দিষ্টভাবে বলা হয়নি কিন্তু বোঝা যায়, তাকে 'implicit' বলা হয়।</p><br> <ul><li>(A) <b>Explicit:</b> সুস্পষ্ট বা সুনির্দিষ্টভাবে বলা।</li><li>(B) <b>Implicit:</b> নিহিত বা অনুক্ত; যা সরাসরি বলা হয়নি কিন্তু বোঝা যায়।</li><li>(C) <b>Elicit:</b> উদ্ঘাটন করা বা তথ্য বের করে আনা।</li><li>(D) <b>Illicit:</b> অবৈধ বা বেআইনি।</li></ul>",
+        },
+        {
+          id: 25,
+          question: "To take out what is given-",
+          options: {
+            a: "Explicit",
+            b: "Implicit",
+            c: "Elicit",
+            d: "Illicit",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্রদত্ত তথ্য থেকে কিছু বের করে আনা বা উদ্ঘাটন করাকে 'elicit' বলা হয়।</p><br> <ul><li>(A) <b>Explicit:</b> সুস্পষ্ট বা সুনির্দিষ্টভাবে বলা।</li><li>(B) <b>Implicit:</b> নিহিত বা অনুক্ত।</li><li>(C) <b>Elicit:</b> উদ্ঘাটন করা, প্রকাশ করা বা তথ্য বের করে আনা।</li><li>(D) <b>Illicit:</b> অবৈধ বা বেআইনি।</li></ul>",
+        },
+        {
+          id: 26,
+          question: "A series of separate events-",
+          options: {
+            a: "Considerable",
+            b: "Success",
+            c: "Successful",
+            d: "Successive",
+          },
+          correct: "d",
+          explanation:
+            "<p>আলাদা আলাদা ঘটনার একটি ধারাবাহিকতাকে 'successive' বলা হয়।</p><br> <ul><li>(A) <b>Considerable:</b> উল্লেখযোগ্য বা অনেক বেশি।</li><li>(B) <b>Success:</b> সাফল্য।</li><li>(C) <b>Successful:</b> সফল।</li><li>(D) <b>Successive:</b> পরপর বা ধারাবাহিক।</li></ul>",
+        },
+        {
+          id: 27,
+          question: "Anything used to prove a point-",
+          options: {
+            a: "immortal",
+            b: "lately",
+            c: "example",
+            d: "sample",
+          },
+          correct: "c",
+          explanation:
+            "<p>কোনো বিষয় প্রমাণ করার জন্য যা ব্যবহৃত হয়, তাকে 'example' বা উদাহরণ বলা হয়।</p><br> <ul><li>(A) <b>Immortal:</b> অমর।</li><li>(B) <b>Lately:</b> সম্প্রতি।</li><li>(C) <b>Example:</b> উদাহরণ; কোনো বক্তব্য বা ধারণাকে স্পষ্ট করতে বা প্রমাণ করতে ব্যবহৃত হয়।</li><li>(D) <b>Sample:</b> নমুনা; কোনো কিছুর ছোট অংশ যা পুরো জিনিসটির প্রতিনিধিত্ব করে।</li></ul>",
+        },
+        {
+          id: 28,
+          question:
+            "A person who leaves his own country to live in another is an-",
+          options: {
+            a: "emigrant",
+            b: "immigrant",
+            c: "foreigner",
+            d: "traveller",
+          },
+          correct: "a",
+          explanation:
+            "<p>যে ব্যক্তি নিজের দেশ ছেড়ে অন্য দেশে বাস করতে যায়, তাকে 'emigrant' বলা হয়।</p><br> <ul><li>(A) <b>Emigrant:</b> অভিবাসী (যে দেশ থেকে চলে যায়)। 'E-' বা 'Ex-' উপসর্গটি 'from' বা 'out of' বোঝায়।</li><li>(B) <b>Immigrant:</b> অভিবাসী (যে দেশে প্রবেশ করে)। 'Im-' বা 'In-' উপসর্গটি 'into' বা 'in' বোঝায়।</li><li>(C) <b>Foreigner:</b> বিদেশী।</li><li>(D) <b>Traveller:</b> পর্যটক বা ভ্রমণকারী।</li></ul>",
+        },
+        {
+          id: 29,
+          question: "Who is a netizen?",
+          options: {
+            a: "a bad citizen",
+            b: "one who uses the internet",
+            c: "one who is not a citizen of a country",
+            d: "a citizen of Nottingham",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Netizen' শব্দটি 'internet' এবং 'citizen' এই দুটি শব্দ থেকে এসেছে। এটি এমন একজন ব্যক্তিকে বোঝায় যিনি ইন্টারনেটের একজন সক্রিয় ব্যবহারকারী এবং অনলাইন সম্প্রদায়ের অংশ।</p><br> <ul><li>(A) <b>A bad citizen:</b> একজন খারাপ নাগরিক।</li><li>(B) <b>One who uses the internet:</b> যিনি ইন্টারনেট ব্যবহার করেন।</li><li>(C) <b>One who is not a citizen of a country:</b> একজন যিনি কোনো দেশের নাগরিক নন।</li><li>(D) <b>A citizen of Nottingham:</b> নটিংহ্যামের একজন নাগরিক।</li></ul>",
+        },
+        {
+          id: 30,
+          question: "The original inhabitants of a country are called-",
+          options: {
+            a: "natives",
+            b: "aborigines",
+            c: "primitives",
+            d: "citizens",
+          },
+          correct: "b",
+          explanation:
+            "<p>একটি দেশের আদিম অধিবাসীদের 'aborigines' বলা হয়। 'Natives' বলতেও আদিবাসীদের বোঝায়, তবে 'aborigines' শব্দটি বিশেষভাবে একটি অঞ্চলের প্রথম বা আদিম অধিবাসীদের বোঝাতে ব্যবহৃত হয়।</p><br> <ul><li>(A) <b>Natives:</b> স্থানীয় অধিবাসী।</li><li>(B) <b>Aborigines:</b> আদিবাসী; একটি দেশের আদিমতম অধিবাসী।</li><li>(C) <b>Primitives:</b> আদিম মানুষ বা অসভ্য।</li><li>(D) <b>Citizens:</b> নাগরিক।</li></ul>",
+        },
+        {
+          id: 31,
+          question: "Homophones are two or more words that have the same-",
+          options: {
+            a: "pronunciation but different meanings",
+            b: "meaning but different pronunciations",
+            c: "spelling but different meanings",
+            d: "spelling but different pronunciations",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Homophones' হল এমন শব্দগুলো যাদের উচ্চারণ একই কিন্তু অর্থ এবং প্রায়শই বানান ভিন্ন হয়। উদাহরণস্বরূপ: 'to', 'two', 'too'।</p><br> <ul><li>(A) <b>Pronunciation but different meanings:</b> একই উচ্চারণ কিন্তু ভিন্ন অর্থ।</li><li>(B) <b>Meaning but different pronunciations:</b> একই অর্থ কিন্তু ভিন্ন উচ্চারণ (এটি synonym)।</li><li>(C) <b>Spelling but different meanings:</b> একই বানান কিন্তু ভিন্ন অর্থ (এটি homograph)।</li><li>(D) <b>Spelling but different pronunciations:</b> একই বানান কিন্তু ভিন্ন উচ্চারণ।</li></ul>",
+        },
+        {
+          id: 32,
+          question: "A book of words and their synonyms is called a-",
+          options: {
+            a: "thesaurus",
+            b: "dictionary",
+            c: "etymology",
+            d: "collocation",
+          },
+          correct: "a",
+          explanation:
+            "<p>যে বইয়ে শব্দ এবং তাদের প্রতিশব্দ (synonyms) ও বিপরীত শব্দ (antonyms) তালিকাভুক্ত থাকে, তাকে 'thesaurus' বলা হয়।</p><br> <ul><li>(A) <b>Thesaurus:</b> প্রতিশব্দ ও বিপরীত শব্দের কোষগ্রন্থ।</li><li>(B) <b>Dictionary:</b> অভিধান; যেখানে শব্দের অর্থ, বানান, উচ্চারণ এবং ব্যবহার দেওয়া থাকে।</li><li>(C) <b>Etymology:</b> শব্দতত্ত্ব; শব্দের উৎপত্তি ও ইতিহাস নিয়ে অধ্যয়ন।</li><li>(D) <b>Collocation:</b> শব্দগুচ্ছ; যে শব্দগুলো সাধারণত একসাথে ব্যবহৃত হয়।</li></ul>",
+        },
+        {
+          id: 33,
+          question:
+            "A person who writes or edits a ___ is called a lexicographer.",
+          options: {
+            a: "letter",
+            b: "book",
+            c: "dictionary",
+            d: "newspaper",
+          },
+          correct: "c",
+          explanation:
+            "<p>একজন 'lexicographer' হলেন সেই ব্যক্তি যিনি অভিধান (dictionary) লেখেন বা সম্পাদনা করেন। 'Lexico-' মানে 'word' এবং '-grapher' মানে 'writer' বা 'recorder'।</p><br> <ul><li>(A) <b>Letter:</b> চিঠি।</li><li>(B) <b>Book:</b> বই।</li><li>(C) <b>Dictionary:</b> অভিধান।</li><li>(D) <b>Newspaper:</b> সংবাদপত্র।</li></ul>",
+        },
+        {
+          id: 34,
+          question: "A bull market is a period when financial investments are-",
+          options: {
+            a: "falling",
+            b: "raising",
+            c: "rising",
+            d: "decreasing",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Bull market' বলতে এমন একটি সময়কালকে বোঝায় যখন শেয়ার বাজার বা অন্যান্য আর্থিক বিনিয়োগের মূল্য ক্রমাগত বৃদ্ধি পায়।</p><br> <ul><li>(A) <b>Falling:</b> পতনশীল।</li><li>(B) <b>Raising:</b> বাড়ানো (সক্রিয় ক্রিয়া)।</li><li>(C) <b>Rising:</b> ক্রমবর্ধমান বা বৃদ্ধি পাচ্ছে।</li><li>(D) <b>Decreasing:</b> হ্রাসপ্রাপ্ত।</li></ul>",
+        },
+        {
+          id: 35,
+          question: "The supporting statement of an argument is known as-",
+          options: {
+            a: "Premise",
+            b: "Conclusion",
+            c: "Logic",
+            d: "REASON:",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি যুক্তির সহায়ক বিবৃতিকে 'premise' বা ভিত্তি বাক্য বলা হয়। 'Premise' হলো এমন একটি বিবৃতি যা একটি যুক্তির ভিত্তি হিসেবে কাজ করে এবং যা থেকে একটি সিদ্ধান্তে পৌঁছানো হয়।</p><br> <ul><li>(A) <b>Premise:</b> ভিত্তি বাক্য; একটি যুক্তি বা সিদ্ধান্তের সমর্থক বিবৃতি।</li><li>(B) <b>Conclusion:</b> সিদ্ধান্ত; একটি যুক্তির শেষ ফলাফল।</li><li>(C) <b>Logic:</b> যুক্তি; যুক্তির পদ্ধতি বা নীতি।</li><li>(D) <b>Reason:</b> কারণ; কোনো কিছুর ব্যাখ্যা।</li></ul>",
+        },
+        {
+          id: 36,
+          question: "The principal claim of an argument is called-",
+          options: {
+            a: "Premise",
+            b: "Conclusion",
+            c: "Evidence",
+            d: "Argument",
+          },
+          correct: "b",
+          explanation:
+            "<p>একটি যুক্তির প্রধান দাবি বা শেষ ফলাফলকে 'conclusion' বা সিদ্ধান্ত বলা হয়। Premise থেকে Conclusion-এ পৌঁছানো হয়।</p><br> <ul><li>(A) <b>Premise:</b> ভিত্তি বাক্য।</li><li>(B) <b>Conclusion:</b> সিদ্ধান্ত; একটি যুক্তির মূল দাবি বা ফলাফল।</li><li>(C) <b>Evidence:</b> প্রমাণ।</li><li>(D) <b>Argument:</b> যুক্তি।</li></ul>",
+        },
+        {
+          id: 37,
+          question: "The word 'oligarchy' refers to-",
+          options: {
+            a: "government by a small group of very powerful people",
+            b: "government by a large group of very powerful people",
+            c: "government by a small group of the have-nots",
+            d: "government by a large group of affluent people",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Oligarchy' শব্দটি একটি ছোট, প্রভাবশালী বা সর্বশক্তিমান গোষ্ঠীর দ্বারা পরিচালিত সরকারকে বোঝায়।</p><br> <ul><li>(A) <b>Government by a small group of very powerful people:</b> খুব শক্তিশালী একটি ছোট গোষ্ঠীর দ্বারা সরকার।</li><li>(B) <b>Government by a large group of very powerful people:</b> খুব শক্তিশালী একটি বড় গোষ্ঠীর দ্বারা সরকার।</li><li>(C) <b>Government by a small group of the have-nots:</b> দরিদ্রদের একটি ছোট গোষ্ঠীর দ্বারা সরকার।</li><li>(D) <b>Government by a large group of affluent people:</b> বিত্তশালীদের একটি বড় গোষ্ঠীর দ্বারা সরকার।</li></ul>",
+        },
+        {
+          id: 38,
+          question: "'A cliche' is _______",
+          options: {
+            a: "an overused expression",
+            b: "a novel expression",
+            c: "a universal truth",
+            d: "a clear expression",
+          },
+          correct: "a",
+          explanation:
+            "<p>'A cliche' হলো এমন একটি অভিব্যক্তি, ধারণা বা উপাদান যা এত বেশি ব্যবহৃত হয়েছে যে এটি তার মৌলিকতা বা প্রভাব হারিয়েছে এবং বিরক্তিকর বা অনুমানযোগ্য হয়ে উঠেছে।</p><br> <ul><li>(A) <b>An overused expression:</b> একটি অতিরিক্ত ব্যবহৃত অভিব্যক্তি।</li><li>(B) <b>A novel expression:</b> একটি অভিনব অভিব্যক্তি।</li><li>(C) <b>A universal truth:</b> একটি সর্বজনীন সত্য।</li><li>(D) <b>A clear expression:</b> একটি স্পষ্ট অভিব্যক্তি।</li></ul>",
+        },
+        {
+          id: 39,
+          question: "'Sub judice' refers to _.",
+          options: {
+            a: "The cases which can be discussed in the media",
+            b: "The cases which cannot be discussed in the media",
+            c: "The cases which are against the state",
+            d: "The cases which are in favour of the state",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Sub judice' একটি ল্যাটিন শব্দগুচ্ছ যার অর্থ 'বিচারের অধীনে'। এটি এমন একটি আইনি নীতিকে বোঝায় যেখানে একটি মামলা বা বিচারিক প্রক্রিয়া এখনও আদালতে বিচারাধীন থাকে এবং সেই বিষয়ে জনসম্মুখে আলোচনা বা মন্তব্য করা আইনত নিষিদ্ধ, যাতে বিচারের নিরপেক্ষতা বজায় থাকে।</p><br> <ul><li>(A) <b>The cases which can be discussed in the media:</b> যে মামলাগুলো গণমাধ্যমে আলোচনা করা যেতে পারে।</li><li>(B) <b>The cases which cannot be discussed in the media:</b> যে মামলাগুলো গণমাধ্যমে আলোচনা করা যায় না।</li><li>(C) <b>The cases which are against the state:</b> যে মামলাগুলো রাষ্ট্রের বিরুদ্ধে।</li><li>(D) <b>The cases which are in favour of the state:</b> যে মামলাগুলো রাষ্ট্রের পক্ষে।</li></ul>",
+        },
+        {
+          id: 40,
+          question: "A person who is unaffected by emotions is called-",
+          options: {
+            a: "stoic",
+            b: "pessimist",
+            c: "optimist",
+            d: "henpecked",
+          },
+          correct: "a",
+          explanation:
+            "<p>যিনি আবেগ দ্বারা প্রভাবিত হন না, তাকে 'stoic' বলা হয়। এটি পূর্বেও ব্যাখ্যা করা হয়েছে (প্রশ্ন নং ৩)।</p><br> <ul><li>(A) <b>Stoic:</b> নির্বিকার; যিনি আবেগ বা অনুভূতি দ্বারা সহজে প্রভাবিত হন না।</li><li>(B) <b>Pessimist:</b> হতাশাবাদী।</li><li>(C) <b>Optimist:</b> আশাবাদী।</li><li>(D) <b>Henpecked:</b> স্ত্রীর দ্বারা শাসিত বা নিয়ন্ত্রিত পুরুষ।</li></ul>",
+        },
+        {
+          id: 41,
+          question: "A gastronome is a person who-",
+          options: {
+            a: "loves good food",
+            b: "works in a gas-field",
+            c: "knows astronomy",
+            d: "suffers from gastric ulcer",
+          },
+          correct: "a",
+          explanation:
+            "<p>একজন 'gastronome' হলেন এমন একজন ব্যক্তি যিনি ভালো খাবার এবং সুস্বাদু খাবারের প্রতি গভীর আগ্রহ রাখেন এবং খাবারের গুণাগুণ সম্পর্কে বিশেষজ্ঞ।</p><br> <ul><li>(A) <b>Loves good food:</b> ভালো খাবার ভালোবাসেন।</li><li>(B) <b>Works in a gas-field:</b> গ্যাস-ক্ষেত্রে কাজ করেন।</li><li>(C) <b>Knows astronomy:</b> জ্যোতির্বিজ্ঞান জানেন (Astronomer)।</li><li>(D) <b>Suffers from gastric ulcer:</b> গ্যাস্ট্রিক আলসারে ভোগেন।</li></ul>",
+        },
+        {
+          id: 42,
+          question: "Study of languages is-",
+          options: {
+            a: "Philosophy",
+            b: "Philology",
+            c: "Theology",
+            d: "Anthropology",
+          },
+          correct: "b",
+          explanation:
+            "<p>ভাষা অধ্যয়নকে 'Philology' বলা হয়। এটি পূর্বেও ব্যাখ্যা করা হয়েছে (প্রশ্ন নং ৫)।</p><br> <ul><li>(A) <b>Philosophy:</b> দর্শন।</li><li>(B) <b>Philology:</b> ভাষাতত্ত্ব; ভাষার ঐতিহাসিক ও সাহিত্যিক দিক নিয়ে অধ্যয়ন।</li><li>(C) <b>Theology:</b> ধর্মতত্ত্ব।</li><li>(D) <b>Anthropology:</b> নৃতত্ত্ব; মানবজাতি সম্পর্কিত অধ্যয়ন।</li></ul>",
+        },
+        {
+          id: 43,
+          question: "'He is a green horn in politics' means he is quite-",
+          options: {
+            a: "experienced",
+            b: "inexperienced",
+            c: "efficient",
+            d: "nervous",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Green horn' একটি Idiom যার অর্থ হলো একজন অনভিজ্ঞ ব্যক্তি, বিশেষ করে কোনো নির্দিষ্ট কাজ বা ক্ষেত্রে নতুন।</p><br> <ul><li>(A) <b>Experienced:</b> অভিজ্ঞ।</li><li>(B) <b>Inexperienced:</b> অনভিজ্ঞ।</li><li>(C) <b>Efficient:</b> দক্ষ।</li><li>(D) <b>Nervous:</b> স্নায়বিক।</li></ul>",
+        },
+        {
+          id: 44,
+          question: "Which one of the following does not mean a road?",
+          options: {
+            a: "Alley",
+            b: "Boulevard",
+            c: "Track",
+            d: "Lagoon",
+          },
+          correct: "d",
+          explanation:
+            "<p>এখানে 'Lagoon' শব্দটি রাস্তা বোঝায় না।</p><br> <ul><li>(A) <b>Alley:</b> সরু রাস্তা বা গলি।</li><li>(B) <b>Boulevard:</b> বৃক্ষশোভিত প্রশস্ত রাস্তা।</li><li>(C) <b>Track:</b> পথ বা রাস্তা।</li><li>(D) <b>Lagoon:</b> উপহ্রদ; সমুদ্রের সাথে সংযুক্ত লবণাক্ত পানির অগভীর জলাশয়, যা একটি ক্ষুদ্র প্রণালী দ্বারা আলাদা থাকে।</li></ul>",
+        },
+        {
+          id: 45,
+          question: "The place where money is coined is-",
+          options: {
+            a: "vault",
+            b: "mint",
+            c: "coinage",
+            d: "counter",
+          },
+          correct: "b",
+          explanation:
+            "<p>যে স্থানে মুদ্রা তৈরি করা হয়, তাকে 'mint' বলা হয়।</p><br> <ul><li>(A) <b>Vault:</b> ভল্ট; মূল্যবান জিনিসপত্র রাখার জন্য সুরক্ষিত কক্ষ।</li><li>(B) <b>Mint:</b> টাকশাল; যেখানে মুদ্রা তৈরি করা হয়।</li><li>(C) <b>Coinage:</b> মুদ্রা তৈরি বা মুদ্রা ব্যবস্থা।</li><li>(D) <b>Counter:</b> কাউন্টার; দোকান বা ব্যাংকে লেনদেনের জন্য ব্যবহৃত স্থান।</li></ul>",
+        },
+        {
+          id: 46,
+          question: "A tattletale is-",
+          options: {
+            a: "a person who tells tales",
+            b: "an ancient folk tale",
+            c: "a person under the influence of alcohol",
+            d: "a collector of children’s fairy tale books",
+          },
+          correct: "a",
+          explanation:
+            "<p>'A tattletale' হলো এমন একজন ব্যক্তি যিনি অন্যের গোপন তথ্য বা ব্যক্তিগত বিষয় অন্যদের কাছে বলে বেড়ান, বিশেষ করে শিশুদের ক্ষেত্রে অভিযোগকারী হিসাবে।</p><br> <ul><li>(A) <b>A person who tells tales:</b> একজন ব্যক্তি যিনি গল্প বা গোপন কথা বলে বেড়ান।</li><li>(B) <b>An ancient folk tale:</b> একটি প্রাচীন লোককাহিনী।</li><li>(C) <b>A person under the influence of alcohol:</b> একজন ব্যক্তি যিনি মদ্যপানের প্রভাবে আছেন।</li><li>(D) <b>A collector of children’s fairy tale books:</b> শিশুদের রূপকথার বইয়ের সংগ্রাহক।</li></ul>",
+        },
+        {
+          id: 47,
+          question: "'Oncology' relates to-",
+          options: {
+            a: "law",
+            b: "medicine",
+            c: "ecology",
+            d: "environment",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Oncology' হলো চিকিৎসা বিজ্ঞানের একটি শাখা যা ক্যান্সার নিয়ে অধ্যয়ন, রোগ নির্ণয় ও চিকিৎসা করে।</p><br> <ul><li>(A) <b>Law:</b> আইন।</li><li>(B) <b>Medicine:</b> চিকিৎসা বিজ্ঞান।</li><li>(C) <b>Ecology:</b> বাস্তুবিদ্যা।</li><li>(D) <b>Environment:</b> পরিবেশ।</li></ul>",
+        },
+        {
+          id: 48,
+          question: "Someone who designs houses is-",
+          options: {
+            a: "a designer",
+            b: "an architect",
+            c: "a builder",
+            d: "a plumber",
+          },
+          correct: "b",
+          explanation:
+            "<p>যিনি বাড়িঘর নকশা করেন, তাকে 'an architect' বা স্থপতি বলা হয়।</p><br> <ul><li>(A) <b>A designer:</b> নকশাকার।</li><li>(B) <b>An architect:</b> স্থপতি; যিনি ভবন এবং অন্যান্য কাঠামোর নকশা করেন।</li><li>(C) <b>A builder:</b> নির্মাতা।</li><li>(D) <b>A plumber:</b> প্লাম্বার; যিনি পানি সরবরাহ ও নিষ্কাশন ব্যবস্থা স্থাপন বা মেরামত করেন।</li></ul>",
+        },
+        {
+          id: 49,
+          question: "'Posthumous' means-",
+          options: {
+            a: "human qualities",
+            b: "occurring before birth",
+            c: "occurring after death",
+            d: "being rational",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Posthumous' মানে মৃত্যুর পরে ঘটে যাওয়া বা প্রকাশিত হওয়া, যেমন 'posthumous award' (মরণোত্তর পুরস্কার) বা 'posthumous publication' (মরণোত্তর প্রকাশনা)।</p><br> <ul><li>(A) <b>Human qualities:</b> মানবিক গুণাবলী।</li><li>(B) <b>Occurring before birth:</b> জন্মের আগে ঘটে যাওয়া।</li><li>(C) <b>Occurring after death:</b> মৃত্যুর পরে ঘটে যাওয়া।</li><li>(D) <b>Being rational:</b> যুক্তিসঙ্গত হওয়া।</li></ul>",
+        },
+        {
+          id: 50,
+          question: "Gustatory image is related with-",
+          options: {
+            a: "touch",
+            b: "taste",
+            c: "hearing",
+            d: "smell",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Gustatory' শব্দটি স্বাদ বা স্বাদ অনুভূতির সাথে সম্পর্কিত। তাই 'Gustatory image' মানে স্বাদ সংক্রান্ত ছবি বা অনুভূতি।</p><br> <ul><li>(A) <b>Touch:</b> স্পর্শ (Tactile image)।</li><li>(B) <b>Taste:</b> স্বাদ।</li><li>(C) <b>Hearing:</b> শ্রবণ (Auditory image)।</li><li>(D) <b>Smell:</b> ঘ্রাণ (Olfactory image)।</li></ul>",
+        },
+        {
+          id: 51,
+          question:
+            "The poem that deals with the memory of a dead person is known as-",
+          options: {
+            a: "epic",
+            b: "dramatic monologue",
+            c: "elegy",
+            d: "novels",
+          },
+          correct: "c",
+          explanation:
+            "<p>যে কবিতা মৃত ব্যক্তির স্মরণে রচিত হয়, তাকে 'elegy' বা শোকগাথা বলা হয়।</p><br> <ul><li>(A) <b>Epic:</b> মহাকাব্য; একটি দীর্ঘ আখ্যানমূলক কবিতা।</li><li>(B) <b>Dramatic monologue:</b> নাট্যিক স্বগতোক্তি; যেখানে একজন চরিত্র একা কথা বলে।</li><li>(C) <b>Elegy:</b> শোকগাথা; মৃত ব্যক্তির প্রতি শোক ও স্মরণে রচিত কবিতা।</li><li>(D) <b>Novels:</b> উপন্যাস; দীর্ঘ গদ্য সাহিত্যকর্ম।</li></ul>",
+        },
+        {
+          id: 52,
+          question: "'Plagiarism' means-",
+          options: {
+            a: "the act of using someone else’s idea as one’s own",
+            b: "the act of planning everything beforehand",
+            c: "the act of playing a musical instrument",
+            d: "the art of dealing with forgery",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Plagiarism' হলো অন্যের ধারণা, শব্দ বা কাজকে নিজের বলে চালিয়ে দেওয়া বা অনুমতি ছাড়া ব্যবহার করা। এটি একটি বুদ্ধিবৃত্তিক চুরি।</p><br> <ul><li>(A) <b>The act of using someone else’s idea as one’s own:</b> অন্যের ধারণা নিজের বলে ব্যবহার করার কাজ।</li><li>(B) <b>The act of planning everything beforehand:</b> সবকিছু আগে থেকে পরিকল্পনা করার কাজ।</li><li>(C) <b>The act of playing a musical instrument:</b> বাদ্যযন্ত্র বাজানোর কাজ।</li><li>(D) <b>The art of dealing with forgery:</b> জালিয়াতি মোকাবেলা করার শিল্প।</li></ul>",
+        },
+        {
+          id: 53,
+          question: "Millennium is a period of-",
+          options: {
+            a: "100 year",
+            b: "1000 year",
+            c: "1 million year",
+            d: "10 million year",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Millennium' মানে এক হাজার বছর।</p><br> <ul><li>(A) <b>100 year:</b> শতাব্দী (Century)।</li><li>(B) <b>1000 year:</b> সহস্রাব্দ (Millennium)।</li><li>(C) <b>1 million year:</b> ১০ লক্ষ বছর।</li><li>(D) <b>10 million year:</b> ১ কোটি বছর।</li></ul>",
+        },
+        {
+          id: 54,
+          question: "A number of singers in a church is called-",
+          options: {
+            a: "Choir",
+            b: "Cast",
+            c: "Claque",
+            d: "Clump",
+          },
+          correct: "a",
+          explanation:
+            "<p>গির্জায় বা উপাসনালয়ে গান গাওয়ার জন্য একত্রিত গায়কদের দলকে 'Choir' বা গায়কদল বলা হয়।</p><br> <ul><li>(A) <b>Choir:</b> গায়কদল।</li><li>(B) <b>Cast:</b> অভিনেতা/অভিনেত্রীর দল।</li><li>(C) <b>Claque:</b> ভাড়া করা করতালিদাতা দল।</li><li>(D) <b>Clump:</b> ঝাড় বা দল।</li></ul>",
+        },
+        {
+          id: 55,
+          question: "Meteorology is related to-",
+          options: {
+            a: "concrete slabs",
+            b: "motor vehicles",
+            c: "weather forecasting",
+            d: "motor neurone disease",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Meteorology' হলো আবহাওয়াবিজ্ঞান, যা বায়ুমণ্ডলীয় ঘটনা এবং আবহাওয়ার পূর্বাভাস নিয়ে অধ্যয়ন করে।</p><br> <ul><li>(A) <b>Concrete slabs:</b> কংক্রিটের স্ল্যাব।</li><li>(B) <b>Motor vehicles:</b> মোটর গাড়ি।</li><li>(C) <b>Weather forecasting:</b> আবহাওয়ার পূর্বাভাস।</li><li>(D) <b>Motor neurone disease:</b> মোটর নিউরন রোগ।</li></ul>",
+        },
+        {
+          id: 56,
+          question: "The word 'equivocation' refers to-",
+          options: {
+            a: "stating like an author",
+            b: "two contradictory things in the same statement",
+            c: "free expression of opinions",
+            d: "a true statement",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Equivocation' হলো একই বিবৃতিতে দুটি পরস্পরবিরোধী বা অস্পষ্ট জিনিস বলা, প্রায়শই সত্যকে এড়াতে বা বিভ্রান্ত করার জন্য।</p><br> <ul><li>(A) <b>Stating like an author:</b> লেখকের মতো করে বলা।</li><li>(B) <b>Two contradictory things in the same statement:</b> একই বিবৃতিতে দুটি পরস্পরবিরোধী জিনিস।</li><li>(C) <b>Free expression of opinions:</b> মতামতের অবাধ প্রকাশ।</li><li>(D) <b>A true statement:</b> একটি সত্য বিবৃতি।</li></ul>",
+        },
+        {
+          id: 57,
+          question: "Word inscribed on a tomb is an-",
+          options: {
+            a: "epitome",
+            b: "epithet",
+            c: "episode",
+            d: "epitaph",
+          },
+          correct: "d",
+          explanation:
+            "<p>কবরের পাথরে খোদাই করা শব্দ বা শিলালিপিকে 'epitaph' বলা হয়।</p><br> <ul><li>(A) <b>Epitome:</b> কোনো কিছুর নিখুঁত উদাহরণ।</li><li>(B) <b>Epithet:</b> বিশেষণ বা উপাধি।</li><li>(C) <b>Episode:</b> ঘটনা বা পর্ব।</li><li>(D) <b>Epitaph:</b> সমাধিলিপি।</li></ul>",
+        },
+        {
+          id: 58,
+          question: "A speech full of too many words is-",
+          options: {
+            a: "a big speech",
+            b: "maiden speech",
+            c: "a verbose speech",
+            d: "an unimportant speech",
+          },
+          correct: "c",
+          explanation:
+            "<p>অতিরিক্ত শব্দ ব্যবহার করে দেওয়া বক্তব্যকে 'verbose speech' বলা হয়।</p><br> <ul><li>(A) <b>A big speech:</b> একটি বড় বক্তৃতা।</li><li>(B) <b>Maiden speech:</b> প্রথম বক্তৃতা।</li><li>(C) <b>A verbose speech:</b> একটি শব্দবহুল বক্তৃতা; যেখানে প্রয়োজনের চেয়ে বেশি শব্দ ব্যবহার করা হয়।</li><li>(D) <b>An unimportant speech:</b> একটি unimportant বক্তৃতা।</li></ul>",
+        },
+        {
+          id: 59,
+          question: "One whose attitude is 'eat, drink and be merry' is-",
+          options: {
+            a: "materialistic",
+            b: "epicurean",
+            c: "cynic",
+            d: "stoic",
+          },
+          correct: "b",
+          explanation:
+            "<p>যিনি 'খাও, পান করো এবং আনন্দ করো' এমন মনোভাব পোষণ করেন, তাকে 'epicurean' বলা হয়। এর অর্থ হল জীবনকে উপভোগ করা এবং ইন্দ্রিয়সুখকে প্রাধান্য দেওয়া।</p><br> <ul><li>(A) <b>Materialistic:</b> বস্তুবাদী।</li><li>(B) <b>Epicurean:</b> ভোগবাদী; যিনি ইন্দ্রিয়সুখকে জীবনের প্রধান লক্ষ্য মনে করেন।</li><li>(C) <b>Cynic:</b> নিন্দুক; যিনি মানবজাতির সততা বা আন্তরিকতা সম্পর্কে সন্দেহ পোষণ করেন।</li><li>(D) <b>Stoic:</b> নির্বিকার।</li></ul>",
+        },
+        {
+          id: 60,
+          question: "The word 'sibling' means-",
+          options: {
+            a: "a brother",
+            b: "a sister",
+            c: "a brother or sister",
+            d: "an infant",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Sibling' শব্দটি ভাই বা বোন উভয়কেই বোঝাতে ব্যবহৃত হয়, লিঙ্গ নির্বিশেষে।</p><br> <ul><li>(A) <b>A brother:</b> একটি ভাই।</li><li>(B) <b>A sister:</b> একটি বোন।</li><li>(C) <b>A brother or sister:</b> একটি ভাই অথবা বোন।</li><li>(D) <b>An infant:</b> একটি শিশু।</li></ul>",
+        },
+        {
+          id: 61,
+          question: "A man whose wife has died is called a-",
+          options: {
+            a: "widow",
+            b: "widower",
+            c: "spinster",
+            d: "bachelor",
+          },
+          correct: "b",
+          explanation:
+            "<p>যে পুরুষের স্ত্রী মারা গেছেন, তাকে 'widower' বলা হয়।</p><br> <ul><li>(A) <b>Widow:</b> বিধবা (যে নারীর স্বামী মারা গেছেন)।</li><li>(B) <b>Widower:</b> বিপত্নীক (যে পুরুষের স্ত্রী মারা গেছেন)।</li><li>(C) <b>Spinster:</b> অবিবাহিত নারী (পুরানো শব্দ)।</li><li>(D) <b>Bachelor:</b> অবিবাহিত পুরুষ।</li></ul>",
+        },
+        {
+          id: 62,
+          question:
+            "When we want to mean a government by the richest class we use the term-",
+          options: {
+            a: "Cryptocracy",
+            b: "Aristocracy",
+            c: "Oligarchy",
+            d: "Plutocracy",
+          },
+          correct: "d",
+          explanation:
+            "<p>যখন সরকার সবচেয়ে ধনী শ্রেণীর দ্বারা পরিচালিত হয়, তখন তাকে 'Plutocracy' বা ধনতন্ত্র বলা হয়।</p><br> <ul><li>(A) <b>Cryptocracy:</b> এমন সরকার যেখানে প্রকৃত শাসকরা গোপনে থাকে।</li><li>(B) <b>Aristocracy:</b> অভিজাততন্ত্র; উচ্চবংশীয়দের দ্বারা সরকার।</li><li>(C) <b>Oligarchy:</b> অভিজাততন্ত্র; একটি ছোট প্রভাবশালী গোষ্ঠীর দ্বারা সরকার।</li><li>(D) <b>Plutocracy:</b> ধনতন্ত্র; ধনীদের দ্বারা পরিচালিত সরকার।</li></ul>",
+        },
+        {
+          id: 63,
+          question:
+            "A person who believes that laws and governments are not necessary is known as-",
+          options: {
+            a: "an anarchist",
+            b: "a terrorist",
+            c: "an extremist",
+            d: "a militant",
+          },
+          correct: "a",
+          explanation:
+            "<p>যে ব্যক্তি বিশ্বাস করেন যে আইন এবং সরকারের প্রয়োজন নেই, তাকে 'an anarchist' বা নৈরাজ্যবাদী বলা হয়।</p><br> <ul><li>(A) <b>An anarchist:</b> নৈরাজ্যবাদী; যিনি সরকার ও আইনবিহীন সমাজ ব্যবস্থা চান।</li><li>(B) <b>A terrorist:</b> সন্ত্রাসী।</li><li>(C) <b>An extremist:</b> চরমপন্থী।</li><li>(D) <b>A militant:</b> সংগ্রামী বা যোদ্ধা।</li></ul>",
+        },
+        {
+          id: 64,
+          question: "Love for the whole world is called-",
+          options: {
+            a: "misogyny",
+            b: "benevolence",
+            c: "misanthropy",
+            d: "philanthropy",
+          },
+          correct: "d",
+          explanation:
+            "<p>পুরো বিশ্বের প্রতি ভালোবাসা বা মানবপ্রেমকে 'philanthropy' বলা হয়। 'Philo-' মানে 'love' এবং 'anthropos' মানে 'humanity'।</p><br> <ul><li>(A) <b>Misogyny:</b> নারী বিদ্বেষ।</li><li>(B) <b>Benevolence:</b> পরোপকারিতা বা দয়া।</li><li>(C) <b>Misanthropy:</b> মানব বিদ্বেষ।</li><li>(D) <b>Philanthropy:</b> মানবপ্রেম বা পরোপকারিতা।</li></ul>",
+        },
+        {
+          id: 65,
+          question:
+            "'Geriatrics' is the branch of medicine concerned with the diseases and care of-",
+          options: {
+            a: "old women",
+            b: "newborn babies",
+            c: "old people",
+            d: "newly-weds",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Geriatrics' হলো চিকিৎসা বিজ্ঞানের সেই শাখা যা বয়স্ক ব্যক্তিদের রোগ এবং তাদের যত্নের সাথে সম্পর্কিত।</p><br> <ul><li>(A) <b>Old women:</b> বৃদ্ধা নারী।</li><li>(B) <b>Newborn babies:</b> নবজাতক শিশু (Pediatrics)।</li><li>(C) <b>Old people:</b> বয়স্ক ব্যক্তি।</li><li>(D) <b>Newly-weds:</b> নবদম্পতি।</li></ul>",
+        },
+        {
+          id: 66,
+          question: "The word 'omnivorous' means-",
+          options: {
+            a: "eating all types of food",
+            b: "eating only fruits",
+            c: "eating only meat",
+            d: "eating grass and plants only",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Omnivorous' বলতে এমন প্রাণী বা ব্যক্তিকে বোঝায় যারা সব ধরনের খাবার খায়, অর্থাৎ মাংস এবং উদ্ভিদ উভয়ই খায়। 'Omni-' মানে 'all' এবং 'vorous' মানে 'eating'।</p><br> <ul><li>(A) <b>Eating all types of food:</b> সব ধরনের খাবার গ্রহণ করা।</li><li>(B) <b>Eating only fruits:</b> শুধু ফল খাওয়া (Frugivorous)।</li><li>(C) <b>Eating only meat:</b> শুধু মাংস খাওয়া (Carnivorous)।</li><li>(D) <b>Eating grass and plants only:</b> শুধু ঘাস ও উদ্ভিদ খাওয়া (Herbivorous)।</li></ul>",
+        },
+        {
+          id: 67,
+          question:
+            "Societies living in the periphery are always ignored. Here the underlined word means-",
+          options: {
+            a: "offshore areas",
+            b: "marginal areas",
+            c: "remote places",
+            d: "backward regions",
+          },
+          correct: "b",
+          explanation:
+            "<p>এই বাক্যে underlined word 'periphery' শব্দের অর্থ হলো প্রান্ত বা প্রান্তিক এলাকা। এর সবচেয়ে উপযুক্ত প্রতিশব্দ হলো 'marginal areas'। এটি পূর্বেও ব্যাখ্যা করা হয়েছে (প্রশ্ন নং ১৫)।</p><br> <ul><li>(A) <b>Offshore areas:</b> উপকূলবর্তী এলাকা।</li><li>(B) <b>Marginal areas:</b> প্রান্তিক বা সীমান্তবর্তী এলাকা।</li><li>(C) <b>Remote places:</b> দূরবর্তী স্থান।</li><li>(D) <b>Backward regions:</b> অনুন্নত অঞ্চল।</li></ul>",
+        },
+        {
+          id: 68,
+          question: 'The word "Electorate" means-',
+          options: {
+            a: "Election office",
+            b: "A body of voters",
+            c: "Many elections",
+            d: "Candidates",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Electorate' হলো কোনো নির্বাচনে ভোট দেওয়ার যোগ্য সকল ব্যক্তির সমষ্টি।</p><br> <ul><li>(A) <b>Election office:</b> নির্বাচন কার্যালয়।</li><li>(B) <b>A body of voters:</b> ভোটারদের একটি দল।</li><li>(C) <b>Many elections:</b> অনেক নির্বাচন।</li><li>(D) <b>Candidates:</b> প্রার্থী।</li></ul>",
+        },
+        {
+          id: 69,
+          question: "A 'pilgrim' is a person who undertakes a journey to a-",
+          options: {
+            a: "Mosque",
+            b: "New country",
+            c: "Holy place",
+            d: "Bazar",
+          },
+          correct: "c",
+          explanation:
+            "<p>একজন 'pilgrim' হলেন সেই ব্যক্তি যিনি ধর্মীয় কারণে একটি পবিত্র স্থানে যাত্রা করেন, যাকে তীর্থযাত্রী বলা হয়।</p><br> <ul><li>(A) <b>Mosque:</b> মসজিদ।</li><li>(B) <b>New country:</b> নতুন দেশ।</li><li>(C) <b>Holy place:</b> পবিত্র স্থান।</li><li>(D) <b>Bazar:</b> বাজার।</li></ul>",
+        },
+        {
+          id: 70,
+          question: "Misanthropist means-",
+          options: {
+            a: "One who flirts with ladies",
+            b: "A person of narrow views",
+            c: "A hater of mankind",
+            d: "One who believes that god is in everything",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Misanthropist' হলো একজন মানব বিদ্বেষী, যিনি মানবজাতিকে ঘৃণা করেন বা তাদের প্রতি অনাস্থা পোষণ করেন। 'Misan-' মানে 'hate' এবং 'anthropos' মানে 'humanity'।</p><br> <ul><li>(A) <b>One who flirts with ladies:</b> যিনি মহিলাদের সাথে ফ্লার্ট করেন।</li><li>(B) <b>A person of narrow views:</b> সংকীর্ণ দৃষ্টিভঙ্গির একজন ব্যক্তি।</li><li>(C) <b>A hater of mankind:</b> মানবজাতির প্রতি ঘৃণা পোষণকারী।</li><li>(D) <b>One who believes that god is in everything:</b> যিনি বিশ্বাস করেন যে ঈশ্বর সবকিছুর মধ্যে আছেন (Pantheist)।</li></ul>",
+        },
+        {
+          id: 71,
+          question: "The word 'Euphemism' means-",
+          options: {
+            a: "stating one thing like another",
+            b: "description of disagreeable thing by an agreeable name",
+            c: "contrast of words is made in the same sentence",
+            d: "a statement is made emphatic by overstatement",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Euphemism' হলো অপ্রীতিকর বা কঠোর কোনো কিছুকে কম আপত্তিকর বা পরোক্ষভাবে বলার পদ্ধতি, যাতে তা আরও নরম বা গ্রহণযোগ্য শোনায়।</p><br> <ul><li>(A) <b>Stating one thing like another:</b> একটি জিনিসকে অন্যটির মতো করে বলা (Simile বা Metaphor)।</li><li>(B) <b>Description of disagreeable thing by an agreeable name:</b> অপ্রীতিকর বিষয়কে একটি সহনীয় নামে বর্ণনা করা।</li><li>(C) <b>Contrast of words is made in the same sentence:</b> একই বাক্যে শব্দের বৈসাদৃশ্য তৈরি করা (Antithesis)।</li><li>(D) <b>A statement is made emphatic by overstatement:</b> অতিরঞ্জন দ্বারা একটি বিবৃতিকে জোরদার করা (Hyperbole)।</li></ul>",
+        },
+        {
+          id: 72,
+          question: "'Blockbuster' means-",
+          options: {
+            a: "A large solid piece of stone",
+            b: "A device to cut off a person’s head as a punishment",
+            c: "Something that makes movement difficult",
+            d: "A powerful explosive to demolish buildings",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Blockbuster' শব্দের একটি অর্থ হলো একটি শক্তিশালী বিস্ফোরক যা বড় কাঠামো বা ভবন ভেঙে ফেলার জন্য ব্যবহৃত হয়। অন্য অর্থে, এটি অত্যন্ত সফল কোনো চলচ্চিত্র, বই বা পণ্যকে বোঝায়। তবে প্রদত্ত অপশনগুলোর মধ্যে বিস্ফোরকের অর্থটি সবচেয়ে উপযুক্ত।</p><br> <ul><li>(A) <b>A large solid piece of stone:</b> একটি বড় কঠিন পাথরের টুকরা।</li><li>(B) <b>A device to cut off a person’s head as a punishment:</b> শাস্তিস্বরূপ মানুষের মাথা কাটার একটি যন্ত্র (Guillotine)।</li><li>(C) <b>Something that makes movement difficult:</b> যা চলাচল কঠিন করে তোলে।</li><li>(D) <b>A powerful explosive to demolish buildings:</b> ভবন ধ্বংস করার জন্য একটি শক্তিশালী বিস্ফোরক।</li></ul>",
+        },
+        {
+          id: 73,
+          question: "“Straw vote” বলতে কী বুঝায়?",
+          options: {
+            a: "Unofficial poll of public opinion",
+            b: "Poll based on random representations",
+            c: '"Yes-No" vote',
+            d: "Manipulated elections",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Straw vote' বা 'straw poll' হলো একটি অনানুষ্ঠানিক জনমত জরিপ যা জনগণের সাধারণ প্রবণতা বা মতামত জানতে করা হয়, যা কোনো আনুষ্ঠানিক নির্বাচনের পূর্বাভাস নয়।</p><br> <ul><li>(A) <b>Unofficial poll of public opinion:</b> জনমতের অনানুষ্ঠানিক জরিপ।</li><li>(B) <b>Poll based on random representations:</b> এলোমেলো প্রতিনিধিত্বের উপর ভিত্তি করে জরিপ।</li><li>(C) <b>\"Yes-No\" vote:</b> \"হ্যাঁ-না\" ভোট।</li><li>(D) <b>Manipulated elections:</b> কারসাজি করা নির্বাচন।</li></ul>",
+        },
+        {
+          id: 74,
+          question: "An ordinance is-",
+          options: {
+            a: "a book",
+            b: "an arms factory",
+            c: "a law",
+            d: "a newspaper, journal",
+          },
+          correct: "c",
+          explanation:
+            "<p>একটি 'ordinance' হলো একটি আইন বা অধ্যাদেশ যা কোনো কর্তৃপক্ষ, যেমন সরকার বা স্থানীয় সংস্থা, দ্বারা জারি করা হয়।</p><br> <ul><li>(A) <b>A book:</b> একটি বই।</li><li>(B) <b>An arms factory:</b> একটি অস্ত্র কারখানা (Ordnance factory)।</li><li>(C) <b>A law:</b> একটি আইন বা অধ্যাদেশ।</li><li>(D) <b>A newspaper, journal:</b> একটি সংবাদপত্র, জার্নাল।</li></ul>",
+        },
+        {
+          id: 75,
+          question: "'Bootleg' means to-",
+          options: {
+            a: "Distribute",
+            b: "Export",
+            c: "Import",
+            d: "Smuggle",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Bootleg' মানে অবৈধভাবে কিছু তৈরি করা, পরিবহন করা বা বিক্রি করা, বিশেষ করে অ্যালকোহল বা অন্য নিষিদ্ধ পণ্য। এর সবচেয়ে উপযুক্ত প্রতিশব্দ হলো 'Smuggle' বা চোরাচালান করা।</p><br> <ul><li>(A) <b>Distribute:</b> বিতরণ করা।</li><li>(B) <b>Export:</b> রপ্তানি করা।</li><li>(C) <b>Import:</b> আমদানি করা।</li><li>(D) <b>Smuggle:</b> চোরাচালান করা।</li></ul>",
+        },
+        {
+          id: 76,
+          question: "Many islands make up-",
+          options: {
+            a: "An isles",
+            b: "An archipelago",
+            c: "A peninsula",
+            d: "A continent",
+          },
+          correct: "b",
+          explanation:
+            "<p>অনেকগুলো দ্বীপের সমষ্টিকে 'An archipelago' বা দ্বীপপুঞ্জ বলা হয়।</p><br> <ul><li>(A) <b>An isles:</b> 'Isles' নিজেই 'islands' এর একটি পুরানো রূপ, তাই এটি সাধারণত 'An isle' (একটি দ্বীপ) বা 'The Isles' (দ্বীপপুঞ্জ) হিসাবে ব্যবহৃত হয়।</li><li>(B) <b>An archipelago:</b> একটি দ্বীপপুঞ্জ; অনেকগুলো দ্বীপের সমষ্টি।</li><li>(C) <b>A peninsula:</b> একটি উপদ্বীপ; স্থলভাগের একটি অংশ যা তিন দিক থেকে পানি দ্বারা বেষ্টিত।</li><li>(D) <b>A continent:</b> একটি মহাদেশ।</li></ul>",
+        },
+        {
+          id: 77,
+          question:
+            "One who unduly forwards in tendering service for others is not generally liked in society. Which of the following words represents truly the character of the person mentioned above?",
+          options: {
+            a: "Benevolent",
+            b: "Official",
+            c: "Officious",
+            d: "Bureaucratic",
+          },
+          correct: "c",
+          explanation:
+            "<p>যিনি অপ্রয়োজনে বা অতিরিক্তভাবে অন্যের জন্য সেবা দিতে আগ্রহী হন এবং অন্যের বিষয়ে নাক গলান, তাকে 'officious' বলা হয়। এই ধরনের ব্যক্তিকে সমাজে সাধারণত পছন্দ করা হয় না।</p><br> <ul><li>(A) <b>Benevolent:</b> দয়ালু বা পরোপকারী।</li><li>(B) <b>Official:</b> সরকারি বা আনুষ্ঠানিক।</li><li>(C) <b>Officious:</b> অনাবশ্যকভাবে অন্যের কাজে হস্তক্ষেপকারী বা বেশি মাতব্বরী করা।</li><li>(D) <b>Bureaucratic:</b> আমলাতান্ত্রিক।</li></ul>",
+        },
+        {
+          id: 78,
+          question: "'Syntax' means-",
+          options: {
+            a: "Manner of speech",
+            b: "Sentence building",
+            c: "Supplementary tax",
+            d: "Synchronizing",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Syntax' হলো ব্যাকরণের একটি শাখা যা বাক্য গঠনের নিয়মাবলী এবং শব্দ, পদ ও বাক্যকে সঠিক বিন্যাসে সাজানোর পদ্ধতি নিয়ে আলোচনা করে।</p><br> <ul><li>(A) <b>Manner of speech:</b> কথা বলার ভঙ্গি।</li><li>(B) <b>Sentence building:</b> বাক্য গঠন।</li><li>(C) <b>Supplementary tax:</b> সম্পূরক কর।</li><li>(D) <b>Synchronizing:</b> সমলয় করা।</li></ul>",
+        },
+        {
+          id: 79,
+          question: "A misogynist is one who-",
+          options: {
+            a: "a man who hates women",
+            b: "person who hates mankind",
+            c: "woman who hates men",
+            d: "man who misunderstands women",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Misogynist' হলো একজন ব্যক্তি যিনি নারীদের ঘৃণা করেন। 'Miso-' মানে 'hate' এবং 'gyny' মানে 'woman'।</p><br> <ul><li>(A) <b>A man who hates women:</b> একজন পুরুষ যিনি নারীদের ঘৃণা করেন।</li><li>(B) <b>Person who hates mankind:</b> মানবজাতিকে ঘৃণা করে এমন ব্যক্তি (Misanthropist)।</li><li>(C) <b>Woman who hates men:</b> একজন নারী যিনি পুরুষদের ঘৃণা করেন (Misandrist)।</li><li>(D) <b>Man who misunderstands women:</b> একজন পুরুষ যিনি নারীদের ভুল বোঝেন।</li></ul>",
+        },
+        {
+          id: 80,
+          question: 'The word "suffrage" means-',
+          options: {
+            a: "the right to vote",
+            b: "the right to suffer",
+            c: "the right to steal",
+            d: "the right to own property",
+          },
+          correct: "a",
+          explanation:
+            "<p>'Suffrage' শব্দের অর্থ হলো ভোটাধিকার বা ভোট দেওয়ার অধিকার।</p><br> <ul><li>(A) <b>The right to vote:</b> ভোট দেওয়ার অধিকার।</li><li>(B) <b>The right to suffer:</b> ভোগার অধিকার।</li><li>(C) <b>The right to steal:</b> চুরি করার অধিকার।</li><li>(D) <b>The right to own property:</b> সম্পত্তি ধারণ করার অধিকার।</li></ul>",
+        },
+        {
+          id: 81,
+          question: "An 'introvert' is one who is mostly-",
+          options: {
+            a: "social",
+            b: "interesting",
+            c: "interactive",
+            d: "self-absorbed",
+          },
+          correct: "d",
+          explanation:
+            "<p>একজন 'introvert' হলেন এমন একজন ব্যক্তি যিনি বেশিরভাগ সময় নিজের চিন্তাভাবনা এবং অনুভূতির মধ্যে নিমগ্ন থাকেন, এবং সামাজিক মেলামেশা থেকে শক্তি না পেয়ে বরং তা থেকে শক্তি হারান।</p><br> <ul><li>(A) <b>Social:</b> সামাজিক (Extrovert-এর বৈশিষ্ট্য)।</li><li>(B) <b>Interesting:</b> আকর্ষণীয়।</li><li>(C) <b>Interactive:</b> ইন্টারেক্টিভ।</li><li>(D) <b>Self-absorbed:</b> আত্মমগ্ন বা নিজের প্রতি অতিরিক্ত মনোযোগী।</li></ul>",
+        },
+        {
+          id: 82,
+          question:
+            "Words different in spelling but similar in sound are called-",
+          options: {
+            a: "homophones",
+            b: "acronyms",
+            c: "synonyms",
+            d: "paronyms",
+          },
+          correct: "a",
+          explanation:
+            "<p>বানানে ভিন্ন কিন্তু উচ্চারণে একই রকম শব্দগুলোকে 'homophones' বলা হয়। এটি পূর্বেও ব্যাখ্যা করা হয়েছে (প্রশ্ন নং ৩১)।</p><br> <ul><li>(A) <b>Homophones:</b> সমোচ্চারিত শব্দ।</li><li>(B) <b>Acronyms:</b> আদ্যক্ষর দিয়ে গঠিত শব্দ।</li><li>(C) <b>Synonyms:</b> প্রতিশব্দ।</li><li>(D) <b>Paronyms:</b> একই উৎস থেকে উৎপন্ন শব্দ, যাদের বানান ও অর্থ সামান্য ভিন্ন হয়।</li></ul>",
+        },
+        {
+          id: 83,
+          question:
+            "Which of the following words means 'to emit a faint or intermittent light'?",
+          options: {
+            a: "show",
+            b: "splash",
+            c: "glimmer",
+            d: "glare",
+          },
+          correct: "c",
+          explanation:
+            "<p>যে শব্দটি 'মৃদু বা অনিয়মিতভাবে আলো নির্গত করা' বোঝায়, তা হলো 'glimmer'।</p><br> <ul><li>(A) <b>Show:</b> দেখানো।</li><li>(B) <b>Splash:</b> ছিটানো।</li><li>(C) <b>Glimmer:</b> মৃদু বা ঝলমলে আলো দেওয়া, ক্ষীণভাবে আলো বিচ্ছুরণ করা।</li><li>(D) <b>Glare:</b> তীব্র উজ্জ্বল আলো।</li></ul>",
+        },
+        {
+          id: 84,
+          question:
+            "Words written on the tombstone as an inscription are called an-",
+          options: {
+            a: "epigraph",
+            b: "epitome",
+            c: "epitaph",
+            d: "epic",
+          },
+          correct: "c",
+          explanation:
+            "<p>কবরের পাথরের উপর খোদাই করা শব্দ বা শিলালিপিকে 'epitaph' বলা হয়। এটি পূর্বেও ব্যাখ্যা করা হয়েছে (প্রশ্ন নং ৫৭)।</p><br> <ul><li>(A) <b>Epigraph:</b> কোনো বই বা অধ্যায়ের শুরুতে উদ্ধৃত উক্তি বা লেখা।</li><li>(B) <b>Epitome:</b> কোনো কিছুর নিখুঁত উদাহরণ।</li><li>(C) <b>Epitaph:</b> সমাধিলিপি।</li><li>(D) <b>Epic:</b> মহাকাব্য।</li></ul>",
+        },
+        {
+          id: 85,
+          question: "A remedy for all diseases is known as-",
+          options: {
+            a: "Panacea",
+            b: "apathetic",
+            c: "marvel",
+            d: "recompense",
+          },
+          correct: "a",
+          explanation:
+            "<p>সকল রোগের প্রতিকার বা সর্বরোগের মহৌষধকে 'Panacea' বলা হয়।</p><br> <ul><li>(A) <b>Panacea:</b> সর্বরোগের ঔষধ বা সমাধান।</li><li>(B) <b>Apathetic:</b> উদাসীন বা অনুভূতিহীন।</li><li>(C) <b>Marvel:</b> বিস্ময়কর কিছু।</li><li>(D) <b>Recompense:</b> ক্ষতিপূরণ বা পুরস্কার।</li></ul>",
+        },
+        {
+          id: 86,
+          question: "An extrovert is a person who-",
+          options: {
+            a: "likes isolation",
+            b: "shares his cheerful feelings",
+            c: "does not enjoy the company of others",
+            d: "keeps himself aloof from others",
+          },
+          correct: "b",
+          explanation:
+            "<p>একজন 'extrovert' হলেন এমন একজন ব্যক্তি যিনি সামাজিক মেলামেশা পছন্দ করেন, অন্যদের সাথে তার অনুভূতি ভাগ করে নেন এবং বাইরের জগতে সক্রিয়ভাবে জড়িত থাকেন।</p><br> <ul><li>(A) <b>Likes isolation:</b> একাকীত্ব পছন্দ করেন (Introvert)।</li><li>(B) <b>Shares his cheerful feelings:</b> তার প্রফুল্ল অনুভূতিগুলো ভাগ করে নেন।</li><li>(C) <b>Does not enjoy the company of others:</b> অন্যের সঙ্গ উপভোগ করেন না (Introvert)।</li><li>(D) <b>Keeps himself aloof from others:</b> অন্যদের থেকে নিজেকে দূরে রাখেন (Introvert)।</li></ul>",
+        },
+        {
+          id: 87,
+          question: "A lexicographer is one who writes-",
+          options: {
+            a: "Novels",
+            b: "Dictionaries",
+            c: "Graphs",
+            d: "Medical books",
+          },
+          correct: "b",
+          explanation:
+            "<p>একজন 'lexicographer' হলেন যিনি অভিধান (dictionaries) লেখেন বা সম্পাদনা করেন। এটি পূর্বেও ব্যাখ্যা করা হয়েছে (প্রশ্ন নং ৩৩)।</p><br> <ul><li>(A) <b>Novels:</b> উপন্যাস (Novelist)।</li><li>(B) <b>Dictionaries:</b> অভিধান।</li><li>(C) <b>Graphs:</b> গ্রাফ (Grapher)।</li><li>(D) <b>Medical books:</b> চিকিৎসা সংক্রান্ত বই (Medical writer)।</li></ul>",
+        },
+        {
+          id: 88,
+          question: "A person who is 100 years old or older than that is a-",
+          options: {
+            a: "century",
+            b: "hundredth",
+            c: "centenarian",
+            d: "quadragenarian",
+          },
+          correct: "c",
+          explanation:
+            "<p>যে ব্যক্তি ১০০ বছর বয়সী বা তার বেশি বয়সী, তাকে 'centenarian' বলা হয়।</p><br> <ul><li>(A) <b>Century:</b> শতাব্দী (১০০ বছরের সময়কাল)।</li><li>(B) <b>Hundredth:</b> শততম।</li><li>(C) <b>Centenarian:</b> শতবর্ষী ব্যক্তি।</li><li>(D) <b>Quadragenarian:</b> ৪০ থেকে ৪৯ বছর বয়সী ব্যক্তি।</li></ul>",
+        },
+        {
+          id: 89,
+          question: "A pilgrim is a person who undertakes a journey to-",
+          options: {
+            a: "old cities",
+            b: "a university",
+            c: "a holy place",
+            d: "a new country",
+          },
+          correct: "c",
+          explanation:
+            "<p>একজন 'pilgrim' হলেন সেই ব্যক্তি যিনি ধর্মীয় কারণে একটি পবিত্র স্থানে যাত্রা করেন, যাকে তীর্থযাত্রী বলা হয়। এটি পূর্বেও ব্যাখ্যা করা হয়েছে (প্রশ্ন নং ৬৯)।</p><br> <ul><li>(A) <b>Old cities:</b> পুরানো শহর।</li><li>(B) <b>A university:</b> একটি বিশ্ববিদ্যালয়।</li><li>(C) <b>A holy place:</b> একটি পবিত্র স্থান।</li><li>(D) <b>A new country:</b> একটি নতুন দেশ।</li></ul>",
+        },
+        {
+          id: 90,
+          question: "The study of ancient societies:",
+          options: {
+            a: "Archaeology",
+            b: "Anthology",
+            c: "Anthropology",
+            d: "History",
+          },
+          correct: "a",
+          explanation:
+            "<p>প্রাচীন সমাজ এবং তাদের সংস্কৃতি ও জীবনযাপন পদ্ধতি নিয়ে অধ্যয়নকে 'Archaeology' বা প্রত্নতত্ত্ব বলা হয়, যা খনন ও নিদর্শন বিশ্লেষণের মাধ্যমে করা হয়।</p><br> <ul><li>(A) <b>Archaeology:</b> প্রত্নতত্ত্ব; প্রাচীন মানব সমাজ ও সংস্কৃতি নিয়ে অধ্যয়ন।</li><li>(B) <b>Anthology:</b> সংকলন; সাহিত্যকর্মের সংগ্রহ।</li><li>(C) <b>Anthropology:</b> নৃতত্ত্ব; মানবজাতি সম্পর্কিত অধ্যয়ন।</li><li>(D) <b>History:</b> ইতিহাস; অতীত ঘটনা নিয়ে অধ্যয়ন।</li></ul>",
+        },
+        {
+          id: 91,
+          question: "The word 'evolution' is associated with-",
+          options: {
+            a: "Politics",
+            b: "Biology",
+            c: "Physics",
+            d: "History",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Evolution' বা বিবর্তন শব্দটি মূলত জীববিজ্ঞান (Biology) এর সাথে সম্পর্কিত, যা সময়ের সাথে সাথে জীবন্ত প্রাণীর পরিবর্তন এবং তাদের প্রজাতির বিকাশের প্রক্রিয়াকে বোঝায়।</p><br> <ul><li>(A) <b>Politics:</b> রাজনীতি।</li><li>(B) <b>Biology:</b> জীববিজ্ঞান।</li><li>(C) <b>Physics:</b> পদার্থবিজ্ঞান।</li><li>(D) <b>History:</b> ইতিহাস।</li></ul>",
+        },
+        {
+          id: 92,
+          question: "The word 'bicameral' is related to-",
+          options: {
+            a: "medical-science",
+            b: "computer",
+            c: "photography",
+            d: "politics",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Bicameral' শব্দটি 'politics' বা রাজনীতির সাথে সম্পর্কিত। এটি এমন একটি আইনসভাকে বোঝায় যা দুটি পৃথক কক্ষ বা চেম্বার নিয়ে গঠিত (যেমন: মার্কিন যুক্তরাষ্ট্রের কংগ্রেস বা বাংলাদেশের সংসদ - যদিও বাংলাদেশের সংসদ বর্তমানে এককক্ষবিশিষ্ট, ঐতিহাসিক প্রেক্ষাপটে এটি দ্বিকক্ষবিশিষ্ট ছিল বা অনেক দেশে দ্বিকক্ষবিশিষ্ট বিদ্যমান)। 'Bi-' মানে 'two' এবং 'camera' মানে 'chamber'।</p><br> <ul><li>(A) <b>Medical-science:</b> চিকিৎসা বিজ্ঞান।</li><li>(B) <b>Computer:</b> কম্পিউটার।</li><li>(C) <b>Photography:</b> ফটোগ্রাফি।</li><li>(D) <b>Politics:</b> রাজনীতি।</li></ul>",
+        },
+        {
+          id: 93,
+          question: "Did you say he teased you? He ___ a good friend.",
+          options: {
+            a: "isn’t",
+            b: "shouldn’t",
+            c: "can’t",
+            d: "won’t",
+          },
+          correct: "c",
+          explanation:
+            "<p>এই বাক্যটি দিয়ে বোঝানো হচ্ছে যে এমন কাজ (উপহাস করা) একজন ভালো বন্ধুর পক্ষে করা সম্ভব নয়। তাই এখানে 'can’t' (cannot) ব্যবহার করা হবে, যা অক্ষমতা বা অসম্ভবতাকে নির্দেশ করে।</p><br> <ul><li>(A) <b>Isn’t:</b> বর্তমান অবস্থা বা পরিচয় বোঝায়। 'He isn’t a good friend' মানে সে ভালো বন্ধু নয়। কিন্তু এখানে কাজের প্রেক্ষিতে মন্তব্য করা হচ্ছে।</li><li>(B) <b>Shouldn’t:</b> নৈতিক বাধ্যবাধকতা বা উচিত-অনুচিত বোঝায়। 'He shouldn’t be a good friend' মানে তার ভালো বন্ধু হওয়া উচিত নয়, যা এখানে প্রযোজ্য নয়।</li><li>(C) <b>Can’t:</b> সক্ষমতার অভাব বা অসম্ভাব্যতা বোঝায়। 'He can’t be a good friend' মানে সে একজন ভালো বন্ধু হতে পারে না, কারণ তার কাজটি ভালো বন্ধুর সাথে সঙ্গতিপূর্ণ নয়। এটি এখানে সবচেয়ে যৌক্তিক।</li><li>(D) <b>Won’t:</b> ভবিষ্যতের অনিচ্ছা বা না করা বোঝায়। 'He won’t be a good friend' মানে সে ভালো বন্ধু হবে না, যা বর্তমান কাজের প্রেক্ষাপটে প্রযোজ্য নয়।</li></ul>",
+        },
+        {
+          id: 94,
+          question:
+            "'Mina's lovely voice was music to our ears' is an example of-",
+          options: {
+            a: "metaphor",
+            b: "metonym",
+            c: "simile",
+            d: "symbol",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে 'Mina's lovely voice' (মিনার সুন্দর কণ্ঠস্বর)-কে সরাসরি 'music to our ears' (আমাদের কানে সঙ্গীত) এর সাথে তুলনা করা হয়েছে, যেখানে 'like' বা 'as' এর মতো তুলনা প্রকাশক শব্দ ব্যবহার করা হয়নি। এটি রূপক বা 'metaphor' এর উদাহরণ।</p><br> <ul><li>(A) <b>Metaphor:</b> রূপক; দুটি ভিন্ন জিনিসের মধ্যে সরাসরি তুলনা করা হয়, যেখানে একটি জিনিসকে অন্যটি হিসেবে উপস্থাপন করা হয়।</li><li>(B) <b>Metonym:</b> অনুষঙ্গবাচক শব্দ; কোনো কিছুর নামকে অন্য কোনো সংশ্লিষ্ট জিনিস দিয়ে বোঝানো।</li><li>(C) <b>Simile:</b> উপমা; দুটি ভিন্ন জিনিসের মধ্যে 'like' বা 'as' ব্যবহার করে তুলনা করা।</li><li>(D) <b>Symbol:</b> প্রতীক; যা কোনো ধারণা বা বস্তুকে উপস্থাপন করে।</li></ul>",
+        },
+        {
+          id: 95,
+          question:
+            "Which term does not technically relate to a formal meeting?",
+          options: {
+            a: "Agenda",
+            b: "Minutes",
+            c: "Preface",
+            d: "Notice",
+          },
+          correct: "c",
+          explanation:
+            "<p>আনুষ্ঠানিক সভার সাথে সম্পর্কিত নয় এমন শব্দটি হল 'Preface'।</p><br> <ul><li>(A) <b>Agenda:</b> সভার আলোচ্যসূচি।</li><li>(B) <b>Minutes:</b> সভার কার্যবিবরণী।</li><li>(C) <b>Preface:</b> ভূমিকা; এটি সাধারণত বই বা লিখিত কাজের শুরুতে থাকে, সভার সাথে সম্পর্কিত নয়।</li><li>(D) <b>Notice:</b> বিজ্ঞপ্তি বা সভার নোটিশ।</li></ul>",
+        },
+        {
+          id: 96,
+          question: "The central idea of a literary work is-",
+          options: {
+            a: "plot",
+            b: "motif",
+            c: "episode",
+            d: "theme",
+          },
+          correct: "d",
+          explanation:
+            "<p>একটি সাহিত্যকর্মের কেন্দ্রীয় ধারণা বা মূল বিষয়কে 'theme' বলা হয়।</p><br> <ul><li>(A) <b>Plot:</b> প্লট; গল্পের ঘটনাপ্রবাহের ক্রম।</li><li>(B) <b>Motif:</b> মোটিফ; একটি পুনরাবৃত্তিমূলক উপাদান, ধারণা বা চিত্র।</li><li>(C) <b>Episode:</b> পর্ব বা ঘটনা।</li><li>(D) <b>Theme:</b> বিষয়বস্তু বা মূলভাব; একটি সাহিত্যকর্মের underlying message বা কেন্দ্রীয় ধারণা।</li></ul>",
+        },
+        {
+          id: 97,
+          question:
+            "The representation of ideas or moral principles by means of symbolic characters, events, or objects is-",
+          options: {
+            a: "Satire",
+            b: "Elegy",
+            c: "Allegory",
+            d: "Parody",
+          },
+          correct: "c",
+          explanation:
+            "<p>রূপক চরিত্র, ঘটনা বা বস্তুর মাধ্যমে ধারণা বা নৈতিক নীতিগুলোর প্রতিনিধিত্বকে 'Allegory' বা রূপক গল্প বলা হয়।</p><br> <ul><li>(A) <b>Satire:</b> ব্যঙ্গ; কৌতুক, বিদ্রূপ বা হাস্যরস ব্যবহার করে সামাজিক বা রাজনৈতিক ত্রুটি সমালোচনা করা।</li><li>(B) <b>Elegy:</b> শোকগাথা।</li><li>(C) <b>Allegory:</b> রূপক; একটি গল্প, কবিতা বা ছবি যা একটি লুকানো অর্থ, প্রায়শই একটি নৈতিক বা রাজনৈতিক বোঝায়।</li><li>(D) <b>Parody:</b> বিদ্রূপাত্মক অনুকরণ।</li></ul>",
+        },
+        {
+          id: 98,
+          question:
+            "Especial attention must be given to the questions at the end of each chapter.",
+          options: {
+            a: "Especial",
+            b: "attention",
+            c: "question",
+            d: "chapter",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে ভুল শব্দটি চিহ্নিত করতে হবে। 'Especial' শব্দটি ব্যাকরণগতভাবে ভুল। এর পরিবর্তে 'special' শব্দটি ব্যবহার করা উচিত। 'Special attention' মানে বিশেষ মনোযোগ। যদিও 'especial' একটি পুরানো বা কাব্যিক শব্দ, আধুনিক ইংরেজিতে 'special' ই বেশি ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 99,
+          question: "Which one is not the characteristic of folk music?",
+          options: {
+            a: "influenced by classical music",
+            b: "transmitted orally",
+            c: "sung in groups or individually",
+            d: "no regular practice is required",
+          },
+          correct: "a",
+          explanation:
+            "<p>লোকসংগীতের একটি বৈশিষ্ট্য হল এটি সাধারণত শাস্ত্রীয় সঙ্গীত দ্বারা প্রভাবিত হয় না। লোকসংগীত স্থানীয় সংস্কৃতি ও ঐতিহ্যের অংশ এবং সাধারণত প্রজন্ম থেকে প্রজন্মান্তরে মৌখিকভাবে (orally) স্থানান্তরিত হয়।</p><br> <ul><li>(A) <b>Influenced by classical music:</b> শাস্ত্রীয় সঙ্গীত দ্বারা প্রভাবিত। এটি লোকসংগীতের বৈশিষ্ট্য নয়।</li><li>(B) <b>Transmitted orally:</b> মৌখিকভাবে প্রচারিত। এটি একটি বৈশিষ্ট্য।</li><li>(C) <b>Sung in groups or individually:</b> দলবদ্ধভাবে বা এককভাবে গাওয়া হয়। এটি একটি বৈশিষ্ট্য।</li><li>(D) <b>No regular practice is required:</b> নিয়মিত অনুশীলনের প্রয়োজন হয় না (যদিও অনুশীলনের মাধ্যমে উন্নতি হয়, এটি শাস্ত্রীয় সঙ্গীতের মতো কঠোর অনুশীলন নির্ভর নয়)। এটি একটি বৈশিষ্ট্য।</li></ul>",
+        },
+        {
+          id: 100,
+          question: "Verbal bullying refers to-",
+          options: {
+            a: "spitting",
+            b: "tripping",
+            c: "teasing",
+            d: "spreading rumours",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Verbal bullying' হলো মৌখিক উৎপীড়ন, যেখানে শব্দ ব্যবহার করে কাউকে কষ্ট দেওয়া, অপমান করা বা ভীতি প্রদর্শন করা হয়। 'Teasing' (ঠাট্টা করা বা উত্যক্ত করা) এর একটি সাধারণ রূপ।</p><br> <ul><li>(A) <b>Spitting:</b> থুতু ফেলা (শারীরিক)।</li><li>(B) <b>Tripping:</b> পা দিয়ে ফেলে দেওয়া (শারীরিক)।</li><li>(C) <b>Teasing:</b> ঠাট্টা করা বা উত্যক্ত করা। এটি মৌখিক উৎপীড়নের মধ্যে পড়ে।</li><li>(D) <b>Spreading rumours:</b> গুজব ছড়ানো (এটিও মৌখিক উৎপীড়নের একটি রূপ, তবে 'teasing' আরও সরাসরি মৌখিক আক্রমণ বোঝায়)। তবে, 'teasing' এবং 'spreading rumours' উভয়ই 'verbal bullying'-এর অন্তর্ভুক্ত হতে পারে। এখানে 'teasing' সরাসরি মৌখিক ক্রিয়া বোঝায়।</li></ul>",
+        },
+        {
+          id: 101,
+          question: "The last sentence of a paragraph is called a-",
+          options: {
+            a: "terminator",
+            b: "topic sentence",
+            c: "introducer",
+            d: "linker",
+          },
+          correct: "a",
+          explanation:
+            "<p>একটি অনুচ্ছেদের শেষ বাক্যকে সাধারণত 'terminator' (সমাপ্তিসূচক বাক্য) বা 'concluding sentence' বলা হয়, যা অনুচ্ছেদটির মূল ধারণাকে শেষ করে বা সারসংক্ষেপ করে।</p><br> <ul><li>(A) <b>Terminator:</b> সমাপ্তিসূচক বাক্য।</li><li>(B) <b>Topic sentence:</b> বিষয় বাক্য; অনুচ্ছেদের প্রধান ধারণা উপস্থাপন করে (সাধারণত প্রথম বাক্য)।</li><li>(C) <b>Introducer:</b> প্রবর্তক।</li><li>(D) <b>Linker:</b> সংযোজক।</li></ul>",
+        },
+        {
+          id: 102,
+          question:
+            "The comparison of unlike things using the words like and as is known to be-",
+          options: {
+            a: "metaphor",
+            b: "simile",
+            c: "alliteration",
+            d: "personification",
+          },
+          correct: "b",
+          explanation:
+            "<p>দুটি ভিন্ন জিনিসের মধ্যে 'like' বা 'as' শব্দ ব্যবহার করে তুলনা করাকে 'simile' বা উপমা বলা হয়।</p><br> <ul><li>(A) <b>Metaphor:</b> রূপক; 'like' বা 'as' ছাড়া সরাসরি তুলনা।</li><li>(B) <b>Simile:</b> উপমা; 'like' বা 'as' ব্যবহার করে তুলনা।</li><li>(C) <b>Alliteration:</b> অনুপ্রাস; একই ব্যঞ্জনবর্ণের পুনরাবৃত্তি।</li><li>(D) <b>Personification:</b> মানবীভূতকরণ; নির্জীব বস্তুতে মানবিক গুণাবলী আরোপ করা।</li></ul>",
+        },
+        {
+          id: 103,
+          question: "The repetition of beginning consonant sound is known as-",
+          options: {
+            a: "personification",
+            b: "onomatopoeia",
+            c: "alliteration",
+            d: "rhyme",
+          },
+          correct: "c",
+          explanation:
+            "<p>একটি বাক্যে বা কবিতার লাইনে পাশাপাশি শব্দের শুরুতে একই ব্যঞ্জনবর্ণের ধ্বনির পুনরাবৃত্তিকে 'alliteration' বা অনুপ্রাস বলা হয়।</p><br> <ul><li>(A) <b>Personification:</b> মানবীভূতকরণ।</li><li>(B) <b>Onomatopoeia:</b> ধ্বন্যাত্মক শব্দ; যেখানে শব্দের উচ্চারণ তার অর্থের অনুকরণ করে (যেমন: bang, buzz)।</li><li>(C) <b>Alliteration:</b> অনুপ্রাস; একই ব্যঞ্জনবর্ণের ধ্বনির পুনরাবৃত্তি।</li><li>(D) <b>Rhyme:</b> ছন্দ বা মিল; শব্দের শেষ অংশের ধ্বনিগত সাদৃশ্য।</li></ul>",
+        },
+        {
+          id: 104,
+          question:
+            "In English grammar, ___ deals with formation of sentences.",
+          options: {
+            a: "Morphology",
+            b: "Etymology",
+            c: "Syntax",
+            d: "Semantics",
+          },
+          correct: "c",
+          explanation:
+            "<p>ইংরেজি ব্যাকরণে, বাক্য গঠন নিয়ে আলোচনা করে 'Syntax' বা বাক্যতত্ত্ব। এটি পূর্বেও ব্যাখ্যা করা হয়েছে (প্রশ্ন নং ৭৮)।</p><br> <ul><li>(A) <b>Morphology:</b> রূপতত্ত্ব; শব্দের গঠন নিয়ে অধ্যয়ন।</li><li>(B) <b>Etymology:</b> শব্দতত্ত্ব; শব্দের উৎপত্তি ও ইতিহাস নিয়ে অধ্যয়ন।</li><li>(C) <b>Syntax:</b> বাক্যতত্ত্ব; বাক্য গঠনের নিয়মাবলী।</li><li>(D) <b>Semantics:</b> অর্থতত্ত্ব; শব্দের ও বাক্যের অর্থ নিয়ে অধ্যয়ন।</li></ul>",
+        },
+        {
+          id: 105,
+          question: "'The French' refers to-",
+          options: {
+            a: "the French people",
+            b: "the French language",
+            c: "the French manners",
+            d: "the French society",
+          },
+          correct: "a",
+          explanation:
+            "<p>সাধারণত, 'The French' বলতে ফরাসি জনগণকে বোঝায়। যখন একটি দেশের ভাষার নামের আগে 'The' বসে, তখন তা সেই দেশের অধিবাসীদের বোঝায়।</p><br> <ul><li>(A) <b>The French people:</b> ফরাসি জনগণ।</li><li>(B) <b>The French language:</b> ফরাসি ভাষা।</li><li>(C) <b>The French manners:</b> ফরাসি রীতিনীতি।</li><li>(D) <b>The French society:</b> ফরাসি সমাজ।</li></ul>",
+        },
+        {
+          id: 106,
+          question: "Time after twilight and before night-",
+          options: {
+            a: "Evening",
+            b: "Dawn",
+            c: "Dusk",
+            d: "Eclipse",
+          },
+          correct: "c",
+          explanation:
+            "<p>গোধূলি এবং রাতের মধ্যবর্তী সময়কে 'Dusk' বা সায়াহ্ন বলা হয়, যখন দিনের আলো কমে আসে এবং অন্ধকার ঘনিয়ে আসে।</p><br> <ul><li>(A) <b>Evening:</b> সন্ধ্যা; দিনের শেষভাগ।</li><li>(B) <b>Dawn:</b> ঊষা বা ভোর; দিনের প্রথম আলো।</li><li>(C) <b>Dusk:</b> গোধূলি বা সায়াহ্ন।</li><li>(D) <b>Eclipse:</b> গ্রহণ (চন্দ্রগ্রহণ বা সূর্যগ্রহণ)।</li></ul>",
+        },
+        {
+          id: 107,
+          question: "The people who carry a coffin at a funeral are called-",
+          options: {
+            a: "undertakers",
+            b: "supporters",
+            c: "pallbearers",
+            d: "mourners",
+          },
+          correct: "c",
+          explanation:
+            "<p>যারা অন্ত্যেষ্টিক্রিয়ায় কফিন বহন করেন, তাদের 'pallbearers' বলা হয়।</p><br> <ul><li>(A) <b>Undertakers:</b> অন্ত্যেষ্টিক্রিয়ার আয়োজনকারী।</li><li>(B) <b>Supporters:</b> সমর্থক।</li><li>(C) <b>Pallbearers:</b> কফিন বহনকারী।</li><li>(D) <b>Mourners:</b> শোকাহত ব্যক্তি।</li></ul>",
+        },
+        {
+          id: 108,
+          question: "The controlling sentence of a paragraph is known as-",
+          options: {
+            a: "content modulator",
+            b: "terminator",
+            c: "thesis statement",
+            d: "topic sentence",
+          },
+          correct: "d",
+          explanation:
+            "<p>একটি অনুচ্ছেদের কেন্দ্রীয় বা নিয়ন্ত্রণকারী বাক্যকে 'topic sentence' বা বিষয় বাক্য বলা হয়। এটি সাধারণত অনুচ্ছেদের শুরুতে থাকে এবং অনুচ্ছেদটির মূল ধারণা তুলে ধরে।</p><br> <ul><li>(A) <b>Content modulator:</b> বিষয়বস্তু নিয়ন্ত্রক।</li><li>(B) <b>Terminator:</b> সমাপ্তিসূচক বাক্য (অনুচ্ছেদের শেষ বাক্য)।</li><li>(C) <b>Thesis statement:</b> থিসিস স্টেটমেন্ট; একটি প্রবন্ধ বা গবেষণাপত্রের মূল যুক্তি বা ধারণা (সাধারণত প্রবন্ধের ভূমিকায় থাকে)।</li><li>(D) <b>Topic sentence:</b> বিষয় বাক্য; অনুচ্ছেদের মূল ধারণা প্রকাশ করে এমন বাক্য।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
